@@ -14,9 +14,12 @@ public class HTMLReport {
 
 	public static FileWriter htmlFile = null;
 	public static BufferedWriter out = null;
+	
 
 	/**
-	 * 
+	 * Creates a new Results Directory, if not present.
+	 * Deletes all the existing files form the Results Directory if already present.
+	 * Creates a new Screenshot Directory inside the Reullts Directory
 	 * 
 	 */
 	public static void checkResultDir() {
@@ -42,11 +45,14 @@ public class HTMLReport {
 
 	
 	/**
+	 * Creates a HTML report after all the files have been executed.
 	 * 
-	 * 
+	 * @param resultSet - Final Result Set after complete execution of all the sheets.
+	 * @param executableFiles - Total Number of Executable Files. 
 	 */
 	
 	 public static void makeHtmlReport( LinkedHashMap<String, ArrayList<String>> resultSet, ArrayList<String> executableFiles){ 
+		 
 		 htmlFile = null; 
 		 out = null;
 		 

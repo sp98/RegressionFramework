@@ -47,23 +47,34 @@ public class DriverScript extends XLReading  {
 
 	private HTMLReport htmlReport = null;
 
-	/* constructor */
+
+	/**
+	 * Class Constructor
+	 * 
+	 */
 	public DriverScript() {
+		
+		/*initializing the working Directories */
 		inputDirectory = System.getProperty("user.dir") + "/Input/";
-		commonInputDirectory = System.getProperty("user.dir")
-				+ "/Input/Common/";
+		commonInputDirectory = System.getProperty("user.dir")+ "/Input/Common/";
+		
 		runMode = "Daily"; // take this as user argument
+		
+		/*initializing the global data Structures */
 		fileVariables = new HashMap<String, LinkedHashMap<String, String>>();
 		allXlReaderObjs = new HashMap<String, HashMap<Workbook, ArrayList<String>>>();
 		sheetData = new LinkedHashMap<String, ArrayList<ArrayList<String>>>();
-
+        
 		htmlReport = new HTMLReport();
 	}
 
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 
-	}
+	
+	
+	/**
+	 * Reads the MasterSheet.xls to get all the executable files
+	 * 
+	 */
 
 	@Test(priority = 1)
 	public void getExecutableFiles() {
@@ -107,6 +118,12 @@ public class DriverScript extends XLReading  {
 		}
 
 	}
+	
+	
+	/**
+	 * Reads each executable file in the Mastersheet.xls to get all
+	 * the executable subSheets and predefined variables in each file.	 
+	 */
 
 	@Test(priority = 1)
 	public void getExecutableSheets() {
@@ -227,7 +244,14 @@ public class DriverScript extends XLReading  {
 		}
 
 	}// End of getExecutableSheets method
-
+	
+	
+	
+	/**
+	 * Reads each executable Sub Sheet in Each executable File
+	 * to store the each rows in a matrix.
+	 * 
+	 */
 	@Test(priority = 2)
 	public void readExecuatbleSheets() {
 
@@ -455,11 +479,13 @@ public class DriverScript extends XLReading  {
 
 	}// readExecutableSheet method ends here.
 
-	/*
-	 * Method: displayInput
-	 */
-
 	
+	
+	
+	/**
+	 * Displays all the input data, that is, Total Executable Files,
+	 * Total Executable Sheets in each file, Cell data in each executable file.
+	 */
 	public void displayInput() {
 
 		appLogs.info("Total number of Executable Files :"
@@ -488,14 +514,16 @@ public class DriverScript extends XLReading  {
 
 	}
 
-	/*
-	 * Method: invokeExecutor
+	
+	/**
+	 * Invokes the executer method defined in Utils class
+	 * for each executable sheet. 
 	 */
 
 	@Test(priority = 3)
 	public void invokeExecutor() {
 
-		ExecutorService service = Executors.newFixedThreadPool(1);
+		/*ExecutorService service = Executors.newFixedThreadPool(1);
 		 try{
 			 for (String fileKey : sheetData.keySet()){
 				 final String key= fileKey;
@@ -511,11 +539,11 @@ public class DriverScript extends XLReading  {
 		 }
 		 finally{
 			 service.shutdown();
-		 } 
+		 } */
 		
 		//appLogs.info("Currently Running thread : "  +Thread.currentThread().getName());
 		// create executor service over here.
-		/*for (String fileKey : sheetData.keySet()) {    
+		for (String fileKey : sheetData.keySet()) {    
 			    	
      		    	Utils utils = new Utils();
 					String[] sheetInfo =fileKey.split(":", 3);
@@ -524,12 +552,13 @@ public class DriverScript extends XLReading  {
 					appLogs.debug("Third String - " + sheetInfo[2]);
 					utils.executor(sheetInfo, sheetData.get(fileKey),					
 							 fileVariables.get(sheetInfo[0]));
-
-		} */
+		} 
 		
 	}
+	
 
 	/**
+	 * Creates the HTML Report 
 	 * 
 	 */
 	@Test(priority = 5)
@@ -539,9 +568,11 @@ public class DriverScript extends XLReading  {
 		htmlReport.checkResultDir();
 		htmlReport.makeHtmlReport(resultSet, executableFiles);
 	}
+	
 
-	/*
-	 * Method: displayOutput
+	/**
+	 * Displays the final output in the console.
+	 * 
 	 */
 	@Test(priority = 4)
 	public void displayOutput() {
@@ -553,26 +584,35 @@ public class DriverScript extends XLReading  {
 
 	}
 
-	/*
-	 * Method: createResultSet
-	 */
 
+	/**
+	 * Adds the execution results for each sheet in resultSet hashMap
+	 * 
+	 * @param fileName -  Name of the currently executing file
+	 * @param SheetName - Name of the current executing Sheet
+	 * @param status - 'PASS' or 'FAIL'
+	 * @param exceptionMessage - The exception message that would have been raised.
+	 * @param screenshotPath - The screenshotName in case of any exception
+	 */
 	public void createResultSet(String FileName, String sheetName,
-			String status, String exceptionMessage, String ScreenshotPath) {
+			String status, String exceptionMessage, String screenshotPath) {
 		appLogs.debug("Inside createResultSet Method");
 		subResultSet = new ArrayList<String>();
 		// subResultSet.add(sheetName);
 		subResultSet.add(status);
 		subResultSet.add(exceptionMessage);
-		subResultSet.add(ScreenshotPath);
+		subResultSet.add(screenshotPath);
 
 		resultSet.put(FileName + ":" + sheetName, subResultSet);
 	}
 
-	/*
-	 * Method: findFile Finds a file in a particular directory uses directory
-	 * name and filename as parameters Returns the File object if the file is
-	 * found.
+	
+	/**
+	 * Checks if the file is present in the current directory.
+	 * 
+	 * @param directory -  the path where the file has be searched in
+	 * @param fileName - The file name to be searched
+	 * @return File object if the file is found, else NULL
 	 */
 	public File findFile(String directory, String fileName) {
 		String name = fileName;

@@ -60,8 +60,7 @@ public class Utils extends DriverScript {
 	public int  executor(String[] sheetInfo,ArrayList<ArrayList<String>> sheetMatrix,
 			HashMap<String, String> fileVariables) {
 
-		//Utils utils= obj;
-		//Utils utils = new Utils();
+		
 		int status = -1;
 		String row = "";
 		/*
@@ -304,9 +303,10 @@ public class Utils extends DriverScript {
 		return 1;
 	}
 
-	/*
-	 * Method: launch_browser launches the browser Browser name should be
-	 * provided as the parameter
+	/**
+	 * Launches the brwoser to perform the test.
+	 * 
+	 * @param browser - the name of the browser to be launched.
 	 */
 	public void launch_browser(String browser) {
 		//WebDriver driver = null;
@@ -339,11 +339,15 @@ public class Utils extends DriverScript {
 
 	}
 
-	/*
-	 * Method: goto_urlArguments: HasMap of all the data in one row, Hashmap of
-	 * all the variables in the config sheet, current executing row number,
-	 * current sheet nameNavigates to the given URL that is present in the Test
-	 * Data Options
+	/**
+	 * Navigates to a particular URL using WebDriver.get(URL) method
+	 * 
+	 * @param fileName -  Name of the currently executing file
+	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
+	 * @param variables - All the variables (specified in config and during run time) for the file
+	 * @param stepNumber - Currently executing Row in the sheet.
+	 * @param currentSheet - Name of the current executing Sheet
+	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
 	public int goto_url(String fileName, ArrayList<String> data,
 			HashMap<String, String> variables, String stepNumber,
@@ -371,6 +375,7 @@ public class Utils extends DriverScript {
 	}
 
 	/**
+	 * Enters text in a field using WebDriver.sendKeys() method
 	 * 
 	 * @param fileName -  Name of the currently executing file
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
@@ -431,6 +436,7 @@ public class Utils extends DriverScript {
 	
 
 	/**
+	 * Clears the user input from a web element using WebDriver.clear() method.
 	 * 
 	 * @param fileName -  Name of the currently executing file
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
@@ -484,6 +490,7 @@ public class Utils extends DriverScript {
 	}
 
 	/**
+	 * Clicks on a particular element using WebDriver.click() method.
 	 * 
 	 * @param fileName -  Name of the currently executing file
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
@@ -492,8 +499,7 @@ public class Utils extends DriverScript {
 	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int click(String fileName, ArrayList<String> data,
-			HashMap<String, String> variables, String stepNumber,
+	public int click(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,
 			String currentSheet) {
 
 		String locatorValue = "";
@@ -537,6 +543,7 @@ public class Utils extends DriverScript {
 	}
 
 	/**
+	 * Clicks on an element using its value attribute, only if that element is present on the page.
 	 * 
 	 * @param fileName -  Name of the currently executing file
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
@@ -582,6 +589,7 @@ public class Utils extends DriverScript {
 	}
 
 	/**
+	 * Wait a particular element to appear on the page then click it. 
 	 * 
 	 * @param fileName -  Name of the currently executing file
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
@@ -591,8 +599,7 @@ public class Utils extends DriverScript {
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
 
-	public int click_wait(String fileName, ArrayList<String> data,
-			HashMap<String, String> variables, String stepNumber,
+	public int click_wait(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber,
 			String currentSheet) {
 		String locatorValue = " ";
 		try {
@@ -651,6 +658,7 @@ public class Utils extends DriverScript {
 	}
 
 	/**
+	 * Assert that a particular element is displayed on the page based on its text value.
 	 * 
 	 * @param fileName -  Name of the currently executing file
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
@@ -659,17 +667,15 @@ public class Utils extends DriverScript {
 	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-
-	public int assert_text(String fileName, ArrayList<String> data,
-			HashMap<String, String> variables, String stepNumber,
+	public int assert_text(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber,
 			String currentSheet) {
 
 		String actualValue = "";
 		String dataParam = "";
 		String locatorValue = "";
+		
 		try {
-			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")
-					|| data.get(5).equals("N/A")) {
+			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
 				return 0;
 			}
@@ -680,8 +686,7 @@ public class Utils extends DriverScript {
 			switch (data.get(3)) { // switch starts here.
 
 			case "xpath":
-				actualValue = driver.findElement(By.xpath(locatorValue))
-						.getText();
+				actualValue = driver.findElement(By.xpath(locatorValue)).getText();
 				break;
 
 			case "id":
@@ -690,8 +695,7 @@ public class Utils extends DriverScript {
 
 			case "class_name":
 
-				actualValue = driver.findElement(By.className(locatorValue))
-						.getText();
+				actualValue = driver.findElement(By.className(locatorValue)).getText();
 				break;
 
 			// add more case statements here.
@@ -722,6 +726,7 @@ public class Utils extends DriverScript {
 	}
 
 	/**
+	 * assert the presence of an element on the page based on its locator value.
 	 * 
 	 * @param fileName -  Name of the currently executing file
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
@@ -730,11 +735,11 @@ public class Utils extends DriverScript {
 	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-
-	public int assert_presence(String fileName, ArrayList<String> data,
-			HashMap<String, String> variables, String stepNumber,
+	public int assert_presence(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber,
 			String currentSheet) {
+		
 		String locatorValue = "";
+		
 		try {
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
@@ -776,6 +781,7 @@ public class Utils extends DriverScript {
 	}
 
 	/**
+	 * Assert that an element is not present on the page based on its locator value 
 	 * 
 	 * @param fileName -  Name of the currently executing file
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
@@ -822,10 +828,10 @@ public class Utils extends DriverScript {
 						+ " in Step number " + stepNumber + " of Sheet "
 						+ currentSheet);
 				getScreenshot(fileName, currentSheet, stepNumber, "Execution Failed :  For Action " + data.get(2)
-						+ " in Step number " + stepNumber + " of Sheet "
-						+ currentSheet );
+						+ " in Step number " + stepNumber + " of Sheet " + currentSheet );
 				return 0;
 			} 
+			
 			else 
 				return 1;
 
@@ -839,6 +845,7 @@ public class Utils extends DriverScript {
 	}
 
 	/**
+	 * Verify the browser alert box on the page and click on 'OK' button. 
 	 * 
 	 * @param fileName -  Name of the currently executing file
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
@@ -888,7 +895,9 @@ public class Utils extends DriverScript {
 	}
 
 	/**
-	 * 
+	 * Select a element from the drop down (to be used only with the web elements that have 
+	 *  'Select' tag)
+	 *  
 	 * @param fileName -  Name of the currently executing file
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config sheet and during run time) for the file
@@ -896,9 +905,7 @@ public class Utils extends DriverScript {
 	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-
-	public int select_from_dropdown(String fileName, ArrayList<String> data,
-			HashMap<String, String> variables, String stepNumber,
+	public int select_from_dropdown(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,
 			String currentSheet) {
 
 		String dataParam = "";
@@ -945,6 +952,7 @@ public class Utils extends DriverScript {
 	}
 
 	/**
+	 * Hover the mouse over a web element.
 	 * 
 	 * @param fileName -  Name of the currently executing file
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
@@ -955,7 +963,7 @@ public class Utils extends DriverScript {
 	 */
 
 	public int mouse_over(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber, String currentSheet) {
-
+		
 		String locatorValue = "";
 		try {
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")) {
@@ -996,6 +1004,7 @@ public class Utils extends DriverScript {
 
 	
 	/**
+	 * Store the text of an element in a variable and add this variable to 'variables' hashmap for further usage.
 	 * 
 	 * @param fileName -  Name of the currently executing file
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
@@ -1005,9 +1014,11 @@ public class Utils extends DriverScript {
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
 	public int store_text(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,String currentSheet) {
+		
 		String key = null;
 		String value = null;
 		String locatorValue = "";
+		
 		try {
 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
@@ -1053,6 +1064,7 @@ public class Utils extends DriverScript {
 
 	
 	/**
+	 * Store the value of an element in a variable and add it to the 'Variables' hashmap for further usage.
 	 * 
 	 * @param fileName -  Name of the currently executing file
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
@@ -1062,9 +1074,11 @@ public class Utils extends DriverScript {
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
 	public int store_value(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,String currentSheet) {
+		
 		String key = null;
 		String value = null;
 		String locatorValue = "";
+		
 		try {
 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
@@ -1108,7 +1122,9 @@ public class Utils extends DriverScript {
 		}
 	}
 
+	
 	/**
+	 * Store the title attribute of a web Element in a variable and store this in 'Variables'  hashMap for further usage
 	 * 
 	 * @param fileName -  Name of the currently executing file
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
@@ -1122,6 +1138,7 @@ public class Utils extends DriverScript {
 		String key = null;
 		String value = null;
 		String locatorValue = "";
+		
 		try {
 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
@@ -1166,6 +1183,7 @@ public class Utils extends DriverScript {
 	}
 
 	/**
+	 * Upload a file 
 	 * 
 	 * @param fileName -  Name of the currently executing file
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
@@ -1233,6 +1251,7 @@ public class Utils extends DriverScript {
 	}
 
 	/**
+	 * 
 	 * 
 	 * @param fileName -  Name of the currently executing file
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
@@ -1311,6 +1330,8 @@ public class Utils extends DriverScript {
 	}
 
 	/**
+	 * Takes the data from a 'Locator Value' and 'Test Data/Options' column and adds and updates them for 
+	 * any 'variable' provided in the 'variables' hashmap
 	 * 
 	 * @param variables - HashMap of the all the variables defined in the config sheet of the file
 	 * @param data - contains the String provided in 'Locator Value' or 'Test Data/Options' column of a row.
@@ -1331,26 +1352,28 @@ public class Utils extends DriverScript {
 	}
 
 	/**
+	 * Adds error message, updates final Result Set in case of any missing arguments in a row.
 	 * 
 	 * @param fileName - Name of currently Executing File
 	 * @param data - Cell data from the currently executing row 
 	 * @param stepNumber - Currently executing row number 
 	 * @param currentSheet - Currently Executing Sheet
 	 */	
-	public void missingArgs(String fileName, ArrayList data, String stepNumber,
-			String currentSheet) {
+	public void missingArgs(String fileName, ArrayList data, String stepNumber,String currentSheet) {
 		appLogs.debug("Inside the missingArgs Method");
-		appLogs.error("Execution Failed: Missing Arugments for the Action "
-		        + data.get(2) + " in Step number " + stepNumber + " of Sheet "
-				+ currentSheet);
+		
+		appLogs.error("Execution Failed: Missing Arugments for the Action " + data.get(2) 
+				    + " in Step number " + stepNumber + " of Sheet "+ currentSheet);
+		
 		createResultSet(fileName, currentSheet, "FAIL","Missing Arugments for the Action " + data.get(2)
-						+ " in Step number " + stepNumber + " of Sheet "
-						+ currentSheet, "N/A");
+						+ " in Step number " + stepNumber + " of Sheet "+ currentSheet, "N/A");
+		
 		quit(fileName, currentSheet, 0); //Quit the browser due to Execution Failure
 	}
 	
 	
 	/**
+	 * Adds error message, updates final Result Set in case of any incorrect Locator Type in a row.
 	 * 
 	 * @param fileName - Name of currently Executing File
 	 * @param data - Cell data from the currently executing row 
@@ -1359,9 +1382,10 @@ public class Utils extends DriverScript {
 	 */	
 	public void incorrectLocatorType(String fileName, ArrayList data, String stepNumber,String currentSheet){
 		appLogs.debug("Inside the incorrectLocatorType Method");
-		appLogs.error("Execution Failed: Incorrect Locator Type for the Action "
-				+ data.get(2) + " in Step number " + stepNumber + " of Sheet "
-				+ currentSheet);
+		
+		appLogs.error("Execution Failed: Incorrect Locator Type for the Action "+ data.get(2) 
+				    + " in Step number " + stepNumber + " of Sheet "+ currentSheet);
+		
 		createResultSet(fileName, currentSheet, "FAIL","Incorrect Locator Type for the Action " + data.get(2)
 						+ " in Step number " + stepNumber + " of Sheet "+ currentSheet, "N/A");
 		
@@ -1370,7 +1394,7 @@ public class Utils extends DriverScript {
 	}
 
 	/**
-	 * 
+	 * Logs error message Set in case of any exceptional condition. 
 	 * @param fileName - Name of currently Executing File
 	 * @param data - Cell data from the currently executing Sheet
 	 * @param stepNumber - Currently executing row number 
@@ -1389,6 +1413,7 @@ public class Utils extends DriverScript {
 	
 
 	/**
+	 * Quit the browser 
 	 * 
 	 * @param fileName - Name of currently Executing File
 	 * @param stepNumber - Currently executing row number 
@@ -1409,6 +1434,7 @@ public class Utils extends DriverScript {
 
 	
 	/**
+	 * Takes screenshot in case of any failure
 	 * 
 	 * @param fileName - Name of currently Executing File
 	 * @param stepNumber - Currently executing row number 
