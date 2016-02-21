@@ -44,6 +44,10 @@ public class DriverScript extends XLReading  {
 	private ArrayList<ArrayList<String>> sheetRowData = null;
 	private ArrayList<String> rowData = null;
 	private ArrayList<String> commonSheetRowData = null;
+	
+	/*Hashmap that contains the runtime variables created in the common Sheet */
+	private LinkedHashMap<String , HashMap<String, String>> allCommonSheetVariables = null;
+	HashMap<String, String> commonSheetVariables= null;
 
 	private HTMLReport htmlReport = null;
 
@@ -64,6 +68,7 @@ public class DriverScript extends XLReading  {
 		fileVariables = new HashMap<String, LinkedHashMap<String, String>>();
 		allXlReaderObjs = new HashMap<String, HashMap<Workbook, ArrayList<String>>>();
 		sheetData = new LinkedHashMap<String, ArrayList<ArrayList<String>>>();
+		allCommonSheetVariables = new LinkedHashMap<String, HashMap<String, String>>();
         
 		htmlReport = new HTMLReport();
 	}
@@ -174,11 +179,11 @@ public class DriverScript extends XLReading  {
 	                 cell.setCellType(Cell.CELL_TYPE_STRING);
 					if (cell.getStringCellValue().equalsIgnoreCase(requiredCol1)) {
 						subSheetRow = cell.getRowIndex() + 1;
-						appLogs.debug("Sub Sheet row is at Row Number "+ subSheetRow);
+						appLogs.info("Sub Sheet row is at Row Number "+ subSheetRow);
 					}
 					if (cell.getStringCellValue().equalsIgnoreCase(requiredCol2)) {
 						variableRow = cell.getRowIndex() + 1;
-						appLogs.debug("Variable Sheet row is at Row Number "+ variableRow);
+						appLogs.info("Variable Sheet row is at Row Number "+ variableRow);
 					}
 				}
 			}
@@ -198,13 +203,13 @@ public class DriverScript extends XLReading  {
 
 			}
 
-			for (int j = variableRow; j <= totalRows; j++) {
+			for (int j = variableRow ; j < totalRows; j++) {
 				Row row2 = sheet.getRow(j);
 				if (row2 != null) {
 					Cell cell1 = row2.getCell(0);
 					Cell cell2 = row2.getCell(1);
 					if (cell1 != null && cell2 != null) {
-						if (!cell1.getStringCellValue().equals(" ")) {
+						if (!cell1.getStringCellValue().isEmpty()) {
 							variables.put(cell1.getStringCellValue(),
 									cell2.getStringCellValue());
 						}
@@ -360,6 +365,7 @@ public class DriverScript extends XLReading  {
 						rowData.add(getCellData(sheetReader, sheetName, j,locatorValueIndex));
 						rowData.add(getCellData(sheetReader, sheetName, j,dataIndex));
 						rowData.add(Integer.toString(currentlyExecutingRowInMain));
+						rowData.add("N/A");
 
 						appLogs.debug("SheetName = " + rowData.get(0)
 								+ " ---- " + " Name = " + rowData.get(1)
@@ -374,6 +380,20 @@ public class DriverScript extends XLReading  {
 								rowData.get(2).toString());
 
 						if (commonFile != null) {
+							
+							if(!rowData.get(5).equals("N/A")){
+								int state= createCommonSheetVariables(fileName, sheetName, commonFile.getName(), currentlyExecutingRowInMain, rowData.get(5).split(","));
+								if(state==0){
+									appLogs.error("Configuration Issue at Row - " + currentlyExecutingRowInMain
+											+ ":: Incorrect Format for the variabes provided for Common Sheet "
+											+ commonFile.getName() + " in Sheet - " + sheetName);
+									createResultSet(fileName, sheetName, "FAIL","Configuration Issue at Row - " + currentlyExecutingRowInMain
+											+ " :: Incorrect Format for the variables provided for Common Sheet "
+											+ commonFile.getName() + " in Sheet - " + sheetName, "N/A");
+									continue third; // stop execution of the current sheet due to incorrect variable intialization for common sheet	
+								}
+							}
+					
 							String commonFileName = rowData.get(2);
 							rowData.clear();
 							int commonNameIndex = 0;
@@ -439,6 +459,7 @@ public class DriverScript extends XLReading  {
 								commonSheetRowData.add(getCellData(commonXlReader,commonXlReader.getSheetName(0), k,commonLocatorValueIndex));
 								commonSheetRowData.add(getCellData(commonXlReader,commonXlReader.getSheetName(0), k,commonDataIndex));
 								commonSheetRowData.add(Integer.toString(currentlyExecutingRowInCommon));
+								commonSheetRowData.add(Integer.toString(currentlyExecutingRowInMain));
 
 								appLogs.debug("SheetName = "
 										+ commonSheetRowData.get(0) + " ---- "
@@ -486,6 +507,7 @@ public class DriverScript extends XLReading  {
 	 * Displays all the input data, that is, Total Executable Files,
 	 * Total Executable Sheets in each file, Cell data in each executable file.
 	 */
+	@Test(priority = 3)
 	public void displayInput() {
 
 		appLogs.info("Total number of Executable Files :"
@@ -500,8 +522,8 @@ public class DriverScript extends XLReading  {
 			}
 		}
 
-		appLogs.info("Total Size of the Sheet Data Metrix" + sheetData.size()
-				+ "Rows in each sheet are: ");
+		appLogs.info("Total Size of the Sheet Data Metrix " + sheetData.size()
+				    + ". Rows in each sheet are: ");
 		for (String keys : sheetData.keySet()) {
 
 			appLogs.info(keys + "--> " + sheetData.get(keys));
@@ -511,6 +533,15 @@ public class DriverScript extends XLReading  {
 			appLogs.info("Total Variables in the File " + executableFileName
 					+ " are: " + fileVariables.get(executableFileName));
 		}
+		
+		
+		appLogs.info ("Total common sheet variables are : ");
+		
+		for(String keys : allCommonSheetVariables.keySet()){
+			
+			appLogs.info(keys + " : " + allCommonSheetVariables.get(keys));
+		}	
+		
 
 	}
 
@@ -520,7 +551,7 @@ public class DriverScript extends XLReading  {
 	 * for each executable sheet. 
 	 */
 
-	@Test(priority = 3)
+	@Test(priority = 4)
 	public void invokeExecutor() {
 
 		/*ExecutorService service = Executors.newFixedThreadPool(1);
@@ -551,7 +582,7 @@ public class DriverScript extends XLReading  {
 					appLogs.debug("Second String - " + sheetInfo[1]);
 					appLogs.debug("Third String - " + sheetInfo[2]);
 					utils.executor(sheetInfo, sheetData.get(fileKey),					
-							 fileVariables.get(sheetInfo[0]));
+							 fileVariables.get(sheetInfo[0]), allCommonSheetVariables);
 		} 
 		
 	}
@@ -561,7 +592,7 @@ public class DriverScript extends XLReading  {
 	 * Creates the HTML Report 
 	 * 
 	 */
-	@Test(priority = 5)
+	@Test(priority = 6)
 	public void createHTMLResult() {
 
 		//test
@@ -574,7 +605,7 @@ public class DriverScript extends XLReading  {
 	 * Displays the final output in the console.
 	 * 
 	 */
-	@Test(priority = 4)
+	@Test(priority = 5)
 	public void displayOutput() {
 
 		appLogs.info("Final Execution Result");
@@ -584,6 +615,34 @@ public class DriverScript extends XLReading  {
 
 	}
 
+	
+	/**
+	 * Displays the final output in the console.
+	 * 
+	 */
+	public int createCommonSheetVariables(String fileName, String sheetName, String commonSheetName, int rowNumber, String [] splitVariables){
+		commonSheetVariables = new HashMap<String, String>();
+		
+		appLogs.info("Total variables: " + splitVariables.length);
+		
+		 for(int i=0; i<splitVariables.length; i++){
+			   String [] splitKeyValuePair = splitVariables[i].split("::");
+			   appLogs.info("Total 2: " + splitKeyValuePair.length);
+			   appLogs.info("Key " + splitKeyValuePair[0]);
+			   appLogs.info("Value " + splitKeyValuePair[1]);
+			     if(splitKeyValuePair.length==2 && splitKeyValuePair[0].toString().trim().substring(0, 5).equals("var <")){
+			    	 String key = splitKeyValuePair[0].toString().trim().substring(3);
+			    	 String value = splitKeyValuePair[1].trim();		    	 
+     		    	  commonSheetVariables.put(key.trim(), value.trim());
+			     }
+			     else{
+			    	 return 0;
+			     }
+		 }
+		 
+		 allCommonSheetVariables.put(fileName +":" +sheetName +":" +commonSheetName+ ":" +rowNumber, commonSheetVariables);
+		 return 1;
+	}
 
 	/**
 	 * Adds the execution results for each sheet in resultSet hashMap

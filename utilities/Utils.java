@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -43,6 +44,7 @@ public class Utils extends DriverScript {
 	private Logger appLogs = null;
 	WebDriverWait wait = null;
 	Actions actions = null;
+	LinkedHashMap<String, HashMap<String, String>> allCommonSheetVars= null;
 
 	public Utils() {
 		// TODO Auto-generated constructor stub
@@ -58,8 +60,9 @@ public class Utils extends DriverScript {
 	 */
 
 	public int  executor(String[] sheetInfo,ArrayList<ArrayList<String>> sheetMatrix,
-			HashMap<String, String> fileVariables) {
+			HashMap<String, String> fileVariables , LinkedHashMap<String,HashMap<String, String>> allCommonSheetVariables) {
 
+		allCommonSheetVars = allCommonSheetVariables;
 		
 		int status = -1;
 		String row = "";
@@ -76,16 +79,20 @@ public class Utils extends DriverScript {
 		
 		appLogs.info("Launching " + sheetInfo[2] + " browser .....");
 		
-		testMethod();
+		/* lanuch the browser */ 
 		launch_browser(sheetInfo[2]);
 
 		appLogs.info("");
 		appLogs.info("< ------ Starting Execution for sheet : " + sheetInfo[1]
 				+ " in File : " + sheetInfo[0] + " ------ >");
 
+		/* for loop to parse through each row in the sheet*/
 		for (int i = 0; i < sheetMatrix.size(); i++) {
-			row = sheetMatrix.get(i).get(6);
-			String action = sheetMatrix.get(i).get(2);
+			
+			row = sheetMatrix.get(i).get(6);   //current running row number taken as a string.
+			String action = sheetMatrix.get(i).get(2);  //get the utility method form each row.
+			
+			/* Print the log message based on the currently executing sheet - Main or Common */
 			if (sheetMatrix.get(i).get(0).equals("Main Sheet")) {
 				appLogs.info("Currently Executing Row " + row + " : "+ sheetMatrix.get(i).get(1) + " -- "
 						+ " in Main Sheet : " + sheetInfo[1] + " -- in File "
@@ -97,7 +104,8 @@ public class Utils extends DriverScript {
 						+ sheetInfo[0]);
 			}
 
-			switch (action) {
+			
+			switch (action) { //Switch to call a particular utility method starts here.
 
 			case "goto_url":
 				status = 0;
@@ -105,7 +113,6 @@ public class Utils extends DriverScript {
 				if (status == 0) {
 					return 0;
 				}
-
 				break;
 
 			case "enter_text":
@@ -135,6 +142,7 @@ public class Utils extends DriverScript {
 				}
 				break;
 
+				
 			case "clear_text":
 				status = 0;
 				status = clear_text(sheetInfo[0], sheetMatrix.get(i),
@@ -144,6 +152,7 @@ public class Utils extends DriverScript {
 				}
 				break;
 
+				
 			case "assert_presence":
 				status = 0;
 				status = assert_presence(sheetInfo[0], sheetMatrix.get(i),
@@ -153,6 +162,7 @@ public class Utils extends DriverScript {
 				}
 				break;
 
+				
 			case "assert_no_presence":
 				status = 0;
 				status = assert_no_presence(sheetInfo[0], sheetMatrix.get(i),
@@ -162,6 +172,7 @@ public class Utils extends DriverScript {
 				}
 				break;
 
+				
 			case "assert_text":
 
 				status = 0;
@@ -172,6 +183,7 @@ public class Utils extends DriverScript {
 				}
 				break;
 
+				
 			// not tested yet
 			case "mouse_over":
 				status = 0;
@@ -183,15 +195,19 @@ public class Utils extends DriverScript {
 
 				break;
 
+				
 			case "click_button":
 				break;
 
+				
 			case "click_using_button_name":
 				break;
 
+				
 			case "click_using_button_value":
 				break;
 
+				
 			case "click_alert_box_ok":
 				status = 0;
 				status = click_alert_box_ok(sheetInfo[0], sheetMatrix.get(i),
@@ -204,6 +220,7 @@ public class Utils extends DriverScript {
 			case "click_if_exists":
 				break;
 
+				
 			case "click_if_exists_button_value":
 				status = 0;
 				status = click_if_exists_button_value(sheetInfo[0],
@@ -213,18 +230,23 @@ public class Utils extends DriverScript {
 				}
 				break;
 
+				
 			case "click_button_wait":
 				break;
 
+				
 			case "select_checkbox_wait":
 				break;
 
+				
 			case "select_check_box":
 				break;
 
+				
 			case "select_radion_button":
 				break;
 
+				
 			case "select_from_dropdown":
 				status = 0;
 				status = select_from_dropdown(sheetInfo[0], sheetMatrix.get(i),
@@ -234,7 +256,7 @@ public class Utils extends DriverScript {
 				}
 				break;
 
-			// not tested yet
+				
 			case "store_text":
 				status = 0;
 				status = store_text(sheetInfo[0], sheetMatrix.get(i),
@@ -244,6 +266,7 @@ public class Utils extends DriverScript {
 				}
 				break;
 
+			
 			// Not tested yet
 			case "store_value":
 				status = 0;
@@ -254,6 +277,7 @@ public class Utils extends DriverScript {
 				}
 				break;
 
+			
 			// Not tested yet
 			case "store_element_title":
 				status = 0;
@@ -264,6 +288,7 @@ public class Utils extends DriverScript {
 				}
 				break;
 
+			
 			case "upload_file":
 				status = 0;
 				status = upload_file(sheetInfo[0], sheetMatrix.get(i),
@@ -273,6 +298,7 @@ public class Utils extends DriverScript {
 				}
 				break;
 
+			//Not working
 			case "assert_query":
 				status = 0;
 				status = assert_query(sheetInfo[0], sheetMatrix.get(i),
@@ -284,25 +310,23 @@ public class Utils extends DriverScript {
 
 			case "quit":
 				quit(sheetInfo[0], sheetInfo[1], 1);
-
 				break;
 
+				
 			default:
-				appLogs.error("Execution Failed in Row : " + row
-						+ " --> Method " + action + " in sheet " + sheetInfo[1]
+				appLogs.error("Execution Failed in Row : " + row + " --> Method " + action + " in sheet " + sheetInfo[1]
 						+ " is not valid.");
-				createResultSet(sheetInfo[0], sheetInfo[1], "FAIL", "Method "
-						+ action + " in step : " + row + " in sheet "
+				createResultSet(sheetInfo[0], sheetInfo[1], "FAIL", "Method "+ action + " in step : " + row + " in sheet "
 						+ sheetInfo[1] + " is not valid.", "N/A");
 				quit(sheetInfo[0], sheetInfo[1], 0);
 				return 0;
-
-			}
-
+			} //Switch to call each utility method ends here. 
 		}
+		
 		return 1;
 	}
 
+	
 	/**
 	 * Launches the brwoser to perform the test.
 	 * 
@@ -312,13 +336,12 @@ public class Utils extends DriverScript {
 		//WebDriver driver = null;
 		
         try{
-        	Thread.sleep(10000);
-        	appLogs.info("Inside Launch browser " + Thread.currentThread().getName());
+        	      	
+        	//appLogs.info("Inside Launch browser " + Thread.currentThread().getName());
     		if (browser.equalsIgnoreCase("chrome")) {
-    			appLogs.info("Running Chrome browser" + Thread.currentThread().getName());
+    			//appLogs.info("Running Chrome browser" + Thread.currentThread().getName());
     			System.setProperty("webdriver.chrome.driver",System.getProperty("user.dir")+ "//Input//Drivers//chromedriver.exe");
-    			appLogs.info("Browser launched by " + Thread.currentThread().getName());
-    			
+    			//appLogs.info("Browser launched by " + Thread.currentThread().getName());			
     			driver = new ChromeDriver();
     			
     		}
@@ -327,16 +350,16 @@ public class Utils extends DriverScript {
     			 driver = new FirefoxDriver();
     		}
 
-    		driver.manage().window().maximize();
-    		driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
+    		driver.manage().window().maximize();  //maximize the browser window.
+    		driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS); // provide implicit wait 
     		wait = new WebDriverWait(driver, 30);
-    		actions = new Actions(driver);
+    		actions = new Actions(driver);  //create object for Actions call for each driver instance
     		
         }
 		catch(Exception e){
 	     appLogs.info("Error is lauching by " + Thread.currentThread().getName() + e.getMessage());
 		}
-		//
+		
 
 	}
 
@@ -350,18 +373,17 @@ public class Utils extends DriverScript {
 	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int goto_url(String fileName, ArrayList<String> data,
-			HashMap<String, String> variables, String stepNumber,
+	public int goto_url(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,
 			String currentSheet) {
 		String dataParam = "";
 		try {
-
+             /* check if there is any missing parameter in current row  */ 
 			if (data.get(5).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
 				return 0;
 			}
-
-			dataParam = getDataParam(variables, data.get(5));
+			
+			dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
 			driver.get(dataParam);
 			return 1;
 		}
@@ -383,7 +405,7 @@ public class Utils extends DriverScript {
 	 * @param variables - All the variables (specified in config and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
 	 * @param currentSheet - Name of the current executing Sheet
-	 * @return 0 in case of Failure and 1 in case of Successfully Execution
+	 * @return 0 in case of Failure and 1 in case of SuccessfullExecution
 	 */
 
 	public int enter_text(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,String currentSheet) {
@@ -391,15 +413,15 @@ public class Utils extends DriverScript {
 		String dataParam = "";
 		String locatorValue = "";
 		try {
-
+			/* check if there is any missing parameter in current row  */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
 				return 0;
 			}
 
 			Thread.sleep(1000);
-			dataParam = getDataParam(variables, data.get(5));
-			locatorValue = getDataParam(variables, data.get(4));
+			dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
+			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
 
 			switch (data.get(3)) { // switch starts here.
 
@@ -447,15 +469,17 @@ public class Utils extends DriverScript {
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
 	public int clear_text(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,String currentSheet) {
+		
 		String locatorValue = "";
 		try {
-
+			
+			/* check if there is any missing parameter in current row  */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
 				return 0;
 			}
 
-			locatorValue = getDataParam(variables, data.get(4));
+			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
 			Thread.sleep(1000);
 			switch (data.get(3)) { // switch starts here.
 
@@ -505,12 +529,14 @@ public class Utils extends DriverScript {
 
 		String locatorValue = "";
 		try {
+			
+			/* check if required parameters for this action are missing or not */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
 				return 0;
 			}
 
-			locatorValue = getDataParam(variables, data.get(4));
+			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
 			Thread.sleep(1000);
 			switch (data.get(3)) { // switch starts here.
 
@@ -561,12 +587,14 @@ public class Utils extends DriverScript {
 		String locatorValue = "";
 		try {
 
+			/* check if required parameters for this action are missing or not */ 
 			if (data.get(4).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
 				return 0;
 			}
 
-			locatorValue = getDataParam(variables, data.get(4));
+			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			
 			Thread.sleep(1000);
 			if (!driver.findElements(
 					By.xpath("//*[@value = '" + locatorValue + "']")).isEmpty()) {
@@ -604,13 +632,16 @@ public class Utils extends DriverScript {
 			String currentSheet) {
 		
 		String locatorValue = " ";
+		
 		try {
+			
+			/* check if required parameters for this action are missing or not */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
 				return 0;
 			}
 
-			locatorValue = getDataParam(variables, data.get(4));
+			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
 
 			switch (data.get(3)) { // switch starts here.
 
@@ -670,13 +701,15 @@ public class Utils extends DriverScript {
 		String locatorValue = "";
 		
 		try {
+			/* check if required parameters for this action are missing or not */ 
+			
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
 				return 0;
 			}
 
-			locatorValue = getDataParam(variables, data.get(4));
-			dataParam = getDataParam(variables, data.get(5));
+			locatorValue =getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
 
 			switch (data.get(3)) { // switch starts here.
 
@@ -741,7 +774,7 @@ public class Utils extends DriverScript {
 				return 0;
 			}
 
-			locatorValue = getDataParam(variables, data.get(4));
+			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
 
 			switch (data.get(3)) { // switch starts here.
 
@@ -795,7 +828,7 @@ public class Utils extends DriverScript {
 				return 0;
 			}
 
-			locatorValue = getDataParam(variables, data.get(4));
+			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
 			switch (data.get(3)) { // switch starts here.
 
 			case "xpath":
@@ -864,7 +897,7 @@ public class Utils extends DriverScript {
 				return 0;
 			}
 
-			dataParam = getDataParam(variables, data.get(5));
+			dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
 			Thread.sleep(1000);
 
 			if (!(alert.getText().equals(dataParam))) {
@@ -912,8 +945,8 @@ public class Utils extends DriverScript {
 			}
 
 			Thread.sleep(1000);
-			dataParam = getDataParam(variables, data.get(5));
-			locatorValue = getDataParam(variables, data.get(4));
+			dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
+			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
 
 			switch (data.get(3)) { // switch starts here.
 
@@ -966,7 +999,7 @@ public class Utils extends DriverScript {
 				return 0;
 			}
 
-			locatorValue = getDataParam(variables, data.get(4));
+			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
 			switch (data.get(3)) { // switch starts here.
 
 			case "xpath":
@@ -1021,7 +1054,7 @@ public class Utils extends DriverScript {
 				return 0;
 			}
 
-			locatorValue = getDataParam(variables, data.get(4));
+			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
 			if(data.get(5).toString().substring(0, 5).equals("var <")){
 				key = data.get(5).toString().substring(3).trim();
 			}
@@ -1087,7 +1120,7 @@ public class Utils extends DriverScript {
 				return 0;
 			}
 
-			locatorValue = getDataParam(variables, data.get(4));
+			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
 			if(data.get(5).toString().substring(0, 5).equals("var <")){
 				key = data.get(5).toString().substring(3).trim();
 			}
@@ -1153,7 +1186,7 @@ public class Utils extends DriverScript {
 				return 0;
 			}
 
-			locatorValue = getDataParam(variables, data.get(4));
+			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
 			if(data.get(5).toString().substring(0, 5).equals("var <")){
 				key = data.get(5).toString().substring(3).trim();
 			}
@@ -1218,8 +1251,8 @@ public class Utils extends DriverScript {
 			
 		}
 
-		dataParam = getDataParam(variables, data.get(5));
-		locatorValue = getDataParam(variables, data.get(4));
+		dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
+		locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
 		JavascriptExecutor js = (JavascriptExecutor) driver;
 		
 		try{
@@ -1290,8 +1323,9 @@ public class Utils extends DriverScript {
 				return 0;
 			}
 
-			locatorValue = getDataParam(variables, data.get(4));
-			dataParam = getDataParam(variables, data.get(5));
+			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
+			
 			query = data.get(4).toString();
 			appLogs.info("Executing query -  " + query);
 
@@ -1351,17 +1385,37 @@ public class Utils extends DriverScript {
 	 * @param data - contains the String provided in 'Locator Value' or 'Test Data/Options' column of a row.
 	 * @return - Returns the updated string value
 	 */	
-	public String getDataParam(HashMap<String, String> variables, String data) {
+	public String getDataParam(String fileName, String currentSheet, ArrayList<String> data,
+			HashMap<String, String> variables, String param) {
+		
+		String commonSheetKey = fileName+":"+currentSheet+":"+data.get(0)+":"+data.get(7);
+		appLogs.info("Common Sheet keys is " + commonSheetKey);
+		
 
+		if(  allCommonSheetVars.get(commonSheetKey)!=null){
+			for(String key: allCommonSheetVars.get(commonSheetKey).keySet()){
+				
+				if (param.indexOf(key) != -1){
+					param= param.replace(key, allCommonSheetVars.get(commonSheetKey).get(key));	
+					   appLogs.info("Acutal Data parameter is in allCommonSheetVars Map " + param);
+    				    return param.trim();
+				}				
+			}
+		}
+			
 		for (String key : variables.keySet()) {
 			appLogs.debug("Finding data parameter for : " + key + " : "+ variables.get(key));
 
-			if (data.indexOf(key) != -1)
-				data = data.replace(key, variables.get(key));
+			if (param.indexOf(key) != -1){
+				param= param.replace(key, variables.get(key));
+			    appLogs.info("Acutal Data parameter is in Variables " + param);
+			    return param.trim();	
+			}
+				
 		}
-		appLogs.debug("Acutal Data parameter is " + data);
-
-		return data.trim();
+		
+		appLogs.info("Acutal Data parameter is " + param);
+		return param.trim();
 
 	}
 
@@ -1429,6 +1483,7 @@ public class Utils extends DriverScript {
 		quit(fileName, currentSheet, 0);  //Quit the browser due to Execution Failure
 		
 	}
+	
 	/**
 	 * Logs error message Set in case of any exceptional condition. 
 	 * @param fileName - Name of currently Executing File
