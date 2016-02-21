@@ -330,12 +330,13 @@ public class Utils extends DriverScript {
     		driver.manage().window().maximize();
     		driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
     		wait = new WebDriverWait(driver, 30);
+    		actions = new Actions(driver);
     		
         }
 		catch(Exception e){
 	     appLogs.info("Error is lauching by " + Thread.currentThread().getName() + e.getMessage());
 		}
-		//actions = new Actions(driver);
+		//
 
 	}
 
@@ -601,6 +602,7 @@ public class Utils extends DriverScript {
 
 	public int click_wait(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber,
 			String currentSheet) {
+		
 		String locatorValue = " ";
 		try {
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")) {
@@ -617,26 +619,19 @@ public class Utils extends DriverScript {
 						.xpath(locatorValue)));
 				// driver.findElement(By.xpath(data.get("Locator Value"))).click();
 				// actions.moveToElement(driver.findElement(By.xpath(data.get("Locator Value")))).click().perform();
-				actions.moveToElement(
-						driver.findElement(By.xpath(locatorValue))).click()
-						.perform();
+				actions.moveToElement(driver.findElement(By.xpath(locatorValue))).click().perform();
 				break;
 
 			case "id":
-				wait.until(ExpectedConditions.visibilityOfElementLocated(By
-						.id(locatorValue)));
+				wait.until(ExpectedConditions.visibilityOfElementLocated(By.id(locatorValue)));
 				// driver.findElement(By.id(data.get("Locator Value"))).click();
-				actions.moveToElement(driver.findElement(By.id(locatorValue)))
-						.click().perform();
+				actions.moveToElement(driver.findElement(By.id(locatorValue))).click().perform();
 				break;
 
 			case "class_name":
-				wait.until(ExpectedConditions.visibilityOfElementLocated(By
-						.className(locatorValue)));
+				wait.until(ExpectedConditions.visibilityOfElementLocated(By.className(locatorValue)));
 				// driver.findElement(By.className(data.get("Locator Value"))).click();
-				actions.moveToElement(
-						driver.findElement(By.className(locatorValue))).click()
-						.perform();
+				actions.moveToElement(driver.findElement(By.className(locatorValue))).click().perform();
 				break;
 
 			// add more case statements here.
@@ -1027,7 +1022,13 @@ public class Utils extends DriverScript {
 			}
 
 			locatorValue = getDataParam(variables, data.get(4));
-			key = data.get(5).toString().substring(3).trim();
+			if(data.get(5).toString().substring(0, 5).equals("var <")){
+				key = data.get(5).toString().substring(3).trim();
+			}
+			else{
+				incorrectVariableDeclaration(fileName, data, stepNumber, currentSheet);
+				return 0;
+			}
 
 			switch (data.get(3)) { // switch starts here.
 
@@ -1087,7 +1088,13 @@ public class Utils extends DriverScript {
 			}
 
 			locatorValue = getDataParam(variables, data.get(4));
-			key = data.get(5).toString().substring(3).trim();
+			if(data.get(5).toString().substring(0, 5).equals("var <")){
+				key = data.get(5).toString().substring(3).trim();
+			}
+			else{
+				incorrectVariableDeclaration(fileName, data, stepNumber, currentSheet);
+				return 0;
+			}
 
 			switch (data.get(3)) { // switch starts here.
 
@@ -1147,7 +1154,14 @@ public class Utils extends DriverScript {
 			}
 
 			locatorValue = getDataParam(variables, data.get(4));
-			key = data.get(5).toString().substring(3).trim();
+			if(data.get(5).toString().substring(0, 5).equals("var <")){
+				key = data.get(5).toString().substring(3).trim();
+			}
+			else{
+				incorrectVariableDeclaration(fileName, data, stepNumber, currentSheet);
+				return 0;
+			}
+			
 
 			switch (data.get(3)) { // switch starts here.
 
@@ -1393,6 +1407,28 @@ public class Utils extends DriverScript {
 		
 	}
 
+	/**
+	 * Adds error message, updates final Result Set in case of incorrect variable declaration in the 
+	 * Test Data/Options Column
+	 * 
+	 * @param fileName - Name of currently Executing File
+	 * @param data - Cell data from the currently executing row 
+	 * @param stepNumber - Currently executing row number 
+	 * @param currentSheet - Currently Executing Sheet
+	 */	
+	public void incorrectVariableDeclaration(String fileName, ArrayList data, String stepNumber,String currentSheet){
+		
+        appLogs.debug("Inside the incorrectVariableAssgnment Method");
+		
+		appLogs.error("Execution Failed: Incorrect Variable Declaration for the Action "+ data.get(2) 
+				    + " in Step number " + stepNumber + " of Sheet "+ currentSheet  + "USE format -  var <variable name>");
+		
+		createResultSet(fileName, currentSheet, "FAIL","Incorrect Variable Declaration for the Action " + data.get(2)
+						+ " in Step number " + stepNumber + " of Sheet "+ currentSheet + " USE format - var <variable name>", "N/A");
+		
+		quit(fileName, currentSheet, 0);  //Quit the browser due to Execution Failure
+		
+	}
 	/**
 	 * Logs error message Set in case of any exceptional condition. 
 	 * @param fileName - Name of currently Executing File
