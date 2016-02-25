@@ -40,12 +40,17 @@ import core.DriverScript;
 public class Utils extends DriverScript {
 
 	WebDriver driver = null;
-	// WebDriver driverRef = null;
 	private Logger appLogs = null;
 	WebDriverWait wait = null;
 	Actions actions = null;
 	LinkedHashMap<String, HashMap<String, String>> allCommonSheetVars= null;
+	public static int parallelCounter = 0;  //counter used to control the parallel processing
+	
 
+	/**
+	 * Class Constructor
+	 * 
+	 */
 	public Utils() {
 		// TODO Auto-generated constructor stub
 		org.apache.log4j.PropertyConfigurator.configure(System
@@ -53,6 +58,7 @@ public class Utils extends DriverScript {
 		appLogs = Logger.getRootLogger();
 
 	}
+	
 
 	/*
 	 * Method: executor launches the browser Browser name should be provided as
@@ -62,23 +68,17 @@ public class Utils extends DriverScript {
 	public int  executor(String[] sheetInfo,ArrayList<ArrayList<String>> sheetMatrix,
 			HashMap<String, String> fileVariables , LinkedHashMap<String,HashMap<String, String>> allCommonSheetVariables) {
 
+		parallelCounter++;
 		allCommonSheetVars = allCommonSheetVariables;
-		
+		System.out.println(parallelCounter);
 		int status = -1;
 		String row = "";
-		/*
-		 * appLogs.info(""); appLogs.info("");
-		 * appLogs.info("Current Executing File - " + sheetInfo[0]);
-		 * appLogs.info("Current Executing Sheet - " + sheetInfo[1]);
-		 * appLogs.info("Current Executing browser - " + sheetInfo[2]);
-		 * appLogs.info("Current Executing File variables -" +fileVariables);
-		 * appLogs.info("Current Executing Sheet Matrix - " +sheetMatrix);
-		 * appLogs.info(""); appLogs.info("");
-		 */
+		
 		appLogs.info("Called by thread : "  +Thread.currentThread().getName());
 		
 		appLogs.info("Launching " + sheetInfo[2] + " browser .....");
 		
+		try {
 		/* lanuch the browser */ 
 		launch_browser(sheetInfo[2]);
 
@@ -324,6 +324,17 @@ public class Utils extends DriverScript {
 		}
 		
 		return 1;
+		} 
+		catch(Exception e){
+			appLogs.info("Exception Raised by Thread - " + Thread.currentThread().getName());
+			createResultSet(sheetInfo[0], sheetInfo[1], "FAIL", e.getMessage(),"N/A");
+			return 0;			
+		}
+		
+		finally{
+			parallelCounter--;
+		}
+		
 	}
 
 	
@@ -701,6 +712,7 @@ public class Utils extends DriverScript {
 		String locatorValue = "";
 		
 		try {
+			
 			/* check if required parameters for this action are missing or not */ 
 			
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
@@ -769,6 +781,7 @@ public class Utils extends DriverScript {
 		String locatorValue = "";
 		
 		try {
+			/* check if required parameters for this action are missing or not */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
 				return 0;
@@ -820,9 +833,12 @@ public class Utils extends DriverScript {
 	 */
 
 	public int assert_no_presence(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,String currentSheet) {
+		
 		String locatorValue = "";
 		List numberOfElements = new ArrayList();
+		
 		try {
+			/* check if required parameters for this action are missing or not */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
 				return 0;
@@ -882,8 +898,7 @@ public class Utils extends DriverScript {
 	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int click_alert_box_ok(String fileName, ArrayList<String> data,
-			HashMap<String, String> variables, String stepNumber,
+	public int click_alert_box_ok(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber,
 			String currentSheet) {
 
 		Alert alert = driver.switchTo().alert();
@@ -892,6 +907,7 @@ public class Utils extends DriverScript {
 		String locatorValue = "";
 
 		try {
+			/* check if required parameters for this action are missing or not */ 
 			if (data.get(5).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
 				return 0;
@@ -939,12 +955,14 @@ public class Utils extends DriverScript {
 		String dataParam = "";
 		String locatorValue = "";
 		try {
+			/* check if required parameters for this action are missing or not */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
 				return 0;
 			}
 
 			Thread.sleep(1000);
+			
 			dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
 			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
 
@@ -1048,7 +1066,8 @@ public class Utils extends DriverScript {
 		String locatorValue = "";
 		
 		try {
-
+			
+			/* check if required parameters for this action are missing or not */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
 				return 0;
@@ -1114,7 +1133,8 @@ public class Utils extends DriverScript {
 		String locatorValue = "";
 		
 		try {
-
+            
+			/* check if required parameters for this action are missing or not */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
 				return 0;
@@ -1180,7 +1200,8 @@ public class Utils extends DriverScript {
 		String locatorValue = "";
 		
 		try {
-
+ 
+			/* check if required parameters for this action are missing or not */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
 				return 0;
@@ -1245,6 +1266,7 @@ public class Utils extends DriverScript {
 		String dataParam = "";
 		String locatorValue = " ";
 		
+		/* check if required parameters for this action are missing or not */ 
 		if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
 			missingArgs(fileName, data, stepNumber, currentSheet);
 			return 0;
@@ -1317,7 +1339,7 @@ public class Utils extends DriverScript {
 		String locatorValue = "";
 
 		try {
-
+			/* check if required parameters for this action are missing or not */ 
 			if (data.get(4).equals("N/A") || data.get(5).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
 				return 0;
@@ -1389,7 +1411,7 @@ public class Utils extends DriverScript {
 			HashMap<String, String> variables, String param) {
 		
 		String commonSheetKey = fileName+":"+currentSheet+":"+data.get(0)+":"+data.get(7);
-		appLogs.info("Common Sheet keys is " + commonSheetKey);
+		appLogs.debug("Common Sheet keys is " + commonSheetKey);
 		
 
 		if(  allCommonSheetVars.get(commonSheetKey)!=null){
@@ -1397,7 +1419,7 @@ public class Utils extends DriverScript {
 				
 				if (param.indexOf(key) != -1){
 					param= param.replace(key, allCommonSheetVars.get(commonSheetKey).get(key));	
-					   appLogs.info("Acutal Data parameter is in allCommonSheetVars Map " + param);
+					   appLogs.debug("Acutal Data parameter is in allCommonSheetVars Map " + param);
     				    return param.trim();
 				}				
 			}
@@ -1408,13 +1430,13 @@ public class Utils extends DriverScript {
 
 			if (param.indexOf(key) != -1){
 				param= param.replace(key, variables.get(key));
-			    appLogs.info("Acutal Data parameter is in Variables " + param);
+			    appLogs.debug("Acutal Data parameter is in Variables " + param);
 			    return param.trim();	
 			}
 				
 		}
 		
-		appLogs.info("Acutal Data parameter is " + param);
+		appLogs.debug("Acutal Data parameter is " + param);
 		return param.trim();
 
 	}
