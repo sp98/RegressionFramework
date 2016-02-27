@@ -39,12 +39,13 @@ import core.DriverScript;
 
 public class Utils extends DriverScript {
 
-	WebDriver driver = null;
-	private Logger appLogs = null;
-	WebDriverWait wait = null;
-	Actions actions = null;
-	LinkedHashMap<String, HashMap<String, String>> allCommonSheetVars= null;
-	public static int parallelCounter = 0;  //counter used to control the parallel processing
+	WebDriver driver = null;       //declaring WebDriver object.
+	private Logger appLogs = null; //declaring Logger class Object for logging purpose
+	WebDriverWait wait = null;     //
+	Actions actions = null;        //declaring an Actions API class object
+	
+	LinkedHashMap<String, HashMap<String, String>> allCommonSheetVars= null;    // declaring a linked HashMap variable
+	//public static int parallelCounter = 0;  //counter used to control the parallel processing
 	
 
 	/**
@@ -68,13 +69,13 @@ public class Utils extends DriverScript {
 	public int  executor(String[] sheetInfo,ArrayList<ArrayList<String>> sheetMatrix,
 			HashMap<String, String> fileVariables , LinkedHashMap<String,HashMap<String, String>> allCommonSheetVariables) {
 
-		parallelCounter++;
+		//parallelCounter++;
 		allCommonSheetVars = allCommonSheetVariables;
-		System.out.println(parallelCounter);
+		//System.out.println(parallelCounter);
 		int status = -1;
 		String row = "";
 		
-		appLogs.info("Called by thread : "  +Thread.currentThread().getName());
+		appLogs.debug("Called by thread : "  +Thread.currentThread().getName());
 		
 		appLogs.info("Launching " + sheetInfo[2] + " browser .....");
 		
@@ -83,8 +84,8 @@ public class Utils extends DriverScript {
 		launch_browser(sheetInfo[2]);
 
 		appLogs.info("");
-		appLogs.info("< ------ Starting Execution for sheet : " + sheetInfo[1]
-				+ " in File : " + sheetInfo[0] + " ------ >");
+		appLogs.info("< ----------- Starting Execution for sheet : " + sheetInfo[1]
+				+ " in File : " + sheetInfo[0] + " ----------- >");
 
 		/* for loop to parse through each row in the sheet*/
 		for (int i = 0; i < sheetMatrix.size(); i++) {
@@ -309,10 +310,9 @@ public class Utils extends DriverScript {
 				break;
 
 			case "quit":
-				quit(sheetInfo[0], sheetInfo[1], 1);
-				break;
-
-				
+				this.quit(sheetInfo[0], sheetInfo[1], 1);
+				return 1;
+			
 			default:
 				appLogs.error("Execution Failed in Row : " + row + " --> Method " + action + " in sheet " + sheetInfo[1]
 						+ " is not valid.");
@@ -326,13 +326,14 @@ public class Utils extends DriverScript {
 		return 1;
 		} 
 		catch(Exception e){
+			//appLogs.info(parallelCounter);
 			appLogs.info("Exception Raised by Thread - " + Thread.currentThread().getName());
-			createResultSet(sheetInfo[0], sheetInfo[1], "FAIL", e.getMessage(),"N/A");
+			createResultSet(sheetInfo[0], sheetInfo[1], "FAIL", e.getMessage().toString(),"N/A");
 			return 0;			
 		}
 		
 		finally{
-			parallelCounter--;
+			//parallelCounter--;
 		}
 		
 	}
@@ -351,7 +352,9 @@ public class Utils extends DriverScript {
         	//appLogs.info("Inside Launch browser " + Thread.currentThread().getName());
     		if (browser.equalsIgnoreCase("chrome")) {
     			//appLogs.info("Running Chrome browser" + Thread.currentThread().getName());
-    			System.setProperty("webdriver.chrome.driver",System.getProperty("user.dir")+ "//Input//Drivers//chromedriver.exe");
+    			File browserFilePath = new File(System.getProperty("user.dir")+ "//Input//Drivers//chromedriver.exe");
+    			System.setProperty("webdriver.chrome.driver", browserFilePath.getAbsolutePath());
+    			//System.setProperty("webdriver.chrome.driver",System.getProperty("user.dir")+ "//Input//Drivers//chromedriver.exe");
     			//appLogs.info("Browser launched by " + Thread.currentThread().getName());			
     			driver = new ChromeDriver();
     			
@@ -1521,7 +1524,7 @@ public class Utils extends DriverScript {
 		appLogs.error("Exception Raised :  For Action " + data.get(2)+ " in Step number " + stepNumber + " of Sheet" + currentSheet);
 		
 		appLogs.error(e.getMessage());
-		return e.getMessage();
+		return e.getMessage().toString();
 	}
 	
 
@@ -1542,7 +1545,8 @@ public class Utils extends DriverScript {
 		} else
 			appLogs.error("< ------ Executon failed for sheet :" + sheetName + " ------ >");
 
-		driver.quit();
+		driver.close();
+		//driver.quit();
 	}
 
 	
