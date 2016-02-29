@@ -60,13 +60,17 @@ public class Utils extends DriverScript {
 
 	}
 	
-
-	/*
-	 * Method: executor launches the browser Browser name should be provided as
-	 * the parameter
+	/**
+	 * Reads each row in the sheet and calls the appropriate method based on the 
+	 * 'Action' column
+	 * 
+	 * @param sheetInfo -  String array which has
+	 * @param sheetMatrix - complete data for a particular sheet.
+	 * @param fileVariables - All the variables (specified in config and during run time) for the file
+	 * @param allCommonSheetVariables - Variables created in front of the common sheet. 
+	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-
-	public int  executor(String[] sheetInfo,ArrayList<ArrayList<String>> sheetMatrix,
+	public int  executor(String[] sheetInfo, ArrayList<ArrayList<String>> sheetMatrix,
 			HashMap<String, String> fileVariables , LinkedHashMap<String,HashMap<String, String>> allCommonSheetVariables) {
 
 		//parallelCounter++;
@@ -116,15 +120,6 @@ public class Utils extends DriverScript {
 				}
 				break;
 
-			case "enter_text":
-				status = 0;
-				status = enter_text(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
-				if (status == 0) {
-					return 0;
-				}
-				break;
-
 			case "click":
 				status = 0;
 				status = click(sheetInfo[0], sheetMatrix.get(i), fileVariables,
@@ -137,6 +132,52 @@ public class Utils extends DriverScript {
 			case "click_wait":
 				status = 0;
 				status = click_wait(sheetInfo[0], sheetMatrix.get(i),
+						fileVariables, row, sheetInfo[1]);
+				if (status == 0) {
+					return 0;
+				}
+				break;
+				
+			case "click_when_clickable":
+				status = 0;
+				status = click_when_clickable(sheetInfo[0], sheetMatrix.get(i),
+						fileVariables, row, sheetInfo[1]);
+				if (status == 0) {
+					return 0;
+				}
+				break;	
+				
+			case "click_if_exists_button_value":
+				status = 0;
+				status = click_if_exists_button_value(sheetInfo[0],
+						sheetMatrix.get(i), fileVariables, row, sheetInfo[1]);
+				if (status == 0) {
+					return 0;
+				}
+				break;
+				
+			case "click_alert_box_ok":
+				status = 0;
+				status = click_alert_box_ok(sheetInfo[0], sheetMatrix.get(i),
+						fileVariables, row, sheetInfo[1]);
+				if (status == 0) {
+					return 0;
+				}
+				break;
+				
+			case "click_alert_box_cancel":
+				status = 0;
+				status = click_alert_box_cancel(sheetInfo[0], sheetMatrix.get(i),
+						fileVariables, row, sheetInfo[1]);
+				if (status == 0) {
+					return 0;
+				}
+				break;
+
+		   
+			case "enter_text":
+				status = 0;
+				status = enter_text(sheetInfo[0], sheetMatrix.get(i),
 						fileVariables, row, sheetInfo[1]);
 				if (status == 0) {
 					return 0;
@@ -208,29 +249,12 @@ public class Utils extends DriverScript {
 			case "click_using_button_value":
 				break;
 
-				
-			case "click_alert_box_ok":
-				status = 0;
-				status = click_alert_box_ok(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
-				if (status == 0) {
-					return 0;
-				}
-				break;
 
 			case "click_if_exists":
 				break;
 
 				
-			case "click_if_exists_button_value":
-				status = 0;
-				status = click_if_exists_button_value(sheetInfo[0],
-						sheetMatrix.get(i), fileVariables, row, sheetInfo[1]);
-				if (status == 0) {
-					return 0;
-				}
-				break;
-
+			
 				
 			case "click_button_wait":
 				break;
@@ -311,7 +335,7 @@ public class Utils extends DriverScript {
 
 			case "quit":
 				this.quit(sheetInfo[0], sheetInfo[1], 1);
-				return 1;
+				break;
 			
 			default:
 				appLogs.error("Execution Failed in Row : " + row + " --> Method " + action + " in sheet " + sheetInfo[1]
@@ -340,8 +364,7 @@ public class Utils extends DriverScript {
 
 	
 	/**
-	 * Launches the brwoser to perform the test.
-	 * 
+	 * Launches the browser to perform the test.
 	 * @param browser - the name of the browser to be launched.
 	 */
 	public void launch_browser(String browser) {
@@ -365,8 +388,8 @@ public class Utils extends DriverScript {
     		}
 
     		driver.manage().window().maximize();  //maximize the browser window.
-    		driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS); // provide implicit wait 
-    		wait = new WebDriverWait(driver, 30);
+    		driver.manage().timeouts().implicitlyWait(15, TimeUnit.SECONDS); // provide implicit wait before throwing NoSuchElementException.
+    		//wait = new WebDriverWait(driver, 30);
     		actions = new Actions(driver);  //create object for Actions call for each driver instance
     		
         }
@@ -421,11 +444,12 @@ public class Utils extends DriverScript {
 	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of SuccessfullExecution
 	 */
+	public int enter_text(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,
+			String currentSheet) {
 
-	public int enter_text(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,String currentSheet) {
-
-		String dataParam = "";
-		String locatorValue = "";
+		String dataParam = "";    //set 'Test Data/Options' value from the list of available variables.
+		String locatorValue = ""; // set 'Locator Value' from the list of available variables.
+		
 		try {
 			/* check if there is any missing parameter in current row  */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
@@ -448,10 +472,13 @@ public class Utils extends DriverScript {
 				break;
 
 			case "class_name":
-				driver.findElement(By.className(locatorValue)).sendKeys(
-						dataParam);
+				driver.findElement(By.className(locatorValue)).sendKeys(dataParam);
 				break;
-
+				
+			case "name":
+				driver.findElement(By.name(locatorValue)).sendKeys(dataParam);
+				break;			
+				
 			// add more case statements here.
 
 			default:
@@ -482,9 +509,11 @@ public class Utils extends DriverScript {
 	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int clear_text(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,String currentSheet) {
+	public int clear_text(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,
+			String currentSheet) {
 		
 		String locatorValue = "";
+		
 		try {
 			
 			/* check if there is any missing parameter in current row  */ 
@@ -509,6 +538,10 @@ public class Utils extends DriverScript {
 			case "class_name":
 				driver.findElement(By.className(locatorValue)).clear();
 				break;
+				
+			case "name":
+				driver.findElement(By.name(locatorValue)).clear();
+				break;		
 
 			// add more case statements here.
 
@@ -542,6 +575,7 @@ public class Utils extends DriverScript {
 			String currentSheet) {
 
 		String locatorValue = "";
+		
 		try {
 			
 			/* check if required parameters for this action are missing or not */ 
@@ -565,6 +599,27 @@ public class Utils extends DriverScript {
 			case "class_name":
 				driver.findElement(By.className(locatorValue)).click();
 				break;
+				
+			case "name":
+				driver.findElement(By.name(locatorValue)).click();
+				break;	
+						
+			case "linkText":
+				driver.findElement(By.linkText(locatorValue)).click();
+				break;	
+				
+			case "partialLinkText":
+				driver.findElement(By.partialLinkText(locatorValue)).click();
+				break;
+				
+			case "title":
+				driver.findElement(By.xpath("//*[@title = '" + locatorValue + "']")).click();
+				break;	
+						
+			case "value":
+				driver.findElement(By.xpath("//*[@value = '" + locatorValue + "']")).click();
+				break;	
+				
 
 			// add more case statements here.
 
@@ -574,6 +629,7 @@ public class Utils extends DriverScript {
 			}// switch ends here
 
 			return 1;
+			
 		} catch (Exception e) {
 			String exceptionMessage = exceptionalCondition(fileName, data,
 					stepNumber, currentSheet, e);
@@ -593,10 +649,8 @@ public class Utils extends DriverScript {
 	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-
-	public int click_if_exists_button_value(String fileName,
-			ArrayList<String> data, HashMap<String, String> variables,
-			String stepNumber, String currentSheet) {
+	public int click_if_exists_button_value(String fileName,ArrayList<String> data, HashMap<String, String> variables,String stepNumber,
+			String currentSheet) {
 
 		String locatorValue = "";
 		try {
@@ -609,7 +663,7 @@ public class Utils extends DriverScript {
 
 			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
 			
-			Thread.sleep(1000);
+			//Check if the element based on the provided value attribute is present or not. Click if present.
 			if (!driver.findElements(
 					By.xpath("//*[@value = '" + locatorValue + "']")).isEmpty()) {
 				((WebElement) driver.findElement(By.xpath("//*[@value = '"
@@ -645,6 +699,7 @@ public class Utils extends DriverScript {
 	public int click_wait(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber,
 			String currentSheet) {
 		
+		wait = new WebDriverWait(driver, 20);  //Creating a new WebDriverWait and passing the WebDriver and TimeOut
 		String locatorValue = " ";
 		
 		try {
@@ -660,24 +715,44 @@ public class Utils extends DriverScript {
 			switch (data.get(3)) { // switch starts here.
 
 			case "xpath":
-				wait.until(ExpectedConditions.visibilityOfElementLocated(By
-						.xpath(locatorValue)));
-				// driver.findElement(By.xpath(data.get("Locator Value"))).click();
-				// actions.moveToElement(driver.findElement(By.xpath(data.get("Locator Value")))).click().perform();
+				wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(locatorValue)));
 				actions.moveToElement(driver.findElement(By.xpath(locatorValue))).click().perform();
 				break;
 
 			case "id":
 				wait.until(ExpectedConditions.visibilityOfElementLocated(By.id(locatorValue)));
-				// driver.findElement(By.id(data.get("Locator Value"))).click();
 				actions.moveToElement(driver.findElement(By.id(locatorValue))).click().perform();
 				break;
 
 			case "class_name":
 				wait.until(ExpectedConditions.visibilityOfElementLocated(By.className(locatorValue)));
-				// driver.findElement(By.className(data.get("Locator Value"))).click();
 				actions.moveToElement(driver.findElement(By.className(locatorValue))).click().perform();
 				break;
+				
+			case "name":
+				wait.until(ExpectedConditions.visibilityOfElementLocated(By.className(locatorValue)));
+				actions.moveToElement(driver.findElement(By.name(locatorValue))).click().perform();
+				break;	
+						
+			case "linkText":
+				wait.until(ExpectedConditions.visibilityOfElementLocated(By.className(locatorValue)));
+				actions.moveToElement(driver.findElement(By.linkText(locatorValue))).click().perform();
+				break;	
+				
+			case "partialLinkText":
+				wait.until(ExpectedConditions.visibilityOfElementLocated(By.className(locatorValue)));
+				actions.moveToElement(driver.findElement(By.partialLinkText(locatorValue))).click().perform();
+				break;
+				
+			case "title":
+				wait.until(ExpectedConditions.visibilityOfElementLocated(By.className(locatorValue)));
+				actions.moveToElement(driver.findElement(By.xpath("//*[@title = '" + locatorValue + "']"))).click().perform();
+				break;	
+						
+			case "value":
+				wait.until(ExpectedConditions.visibilityOfElementLocated(By.className(locatorValue)));
+				actions.moveToElement(driver.findElement(By.xpath("//*[@value = '" + locatorValue + "']"))).click().perform();
+				break;	
 
 			// add more case statements here.
 
@@ -695,6 +770,95 @@ public class Utils extends DriverScript {
 			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
 			return 0;
 		}
+	}
+	
+	/**
+	 * Click on a particular web element only when its clickable.
+	 * 
+	 * @param fileName -  Name of the currently executing file
+	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
+	 * @param variables - All the variables (specified in config sheet and during run time) for the file
+	 * @param stepNumber - Currently executing Row in the sheet.
+	 * @param currentSheet - Name of the current executing Sheet
+	 * @return 0 in case of Failure and 1 in case of Successfully Execution
+	 */
+	
+	public int click_when_clickable(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber,
+			String currentSheet){
+		
+		wait = new WebDriverWait(driver, 20);  //Creating a new WebDriverWait and passing the WebDriver and TimeOut
+	
+		String locatorValue = "";
+		
+		try {
+			
+			/* check if required parameters for this action are missing or not */ 
+			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")) {
+				missingArgs(fileName, data, stepNumber, currentSheet);
+				return 0;
+			}
+
+			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			Thread.sleep(1000);
+			switch (data.get(3)) { // switch starts here.
+
+			case "xpath":
+				wait.until(ExpectedConditions.elementToBeClickable(By.xpath(locatorValue)));
+				actions.moveToElement(driver.findElement(By.xpath(locatorValue))).click().perform();
+				break;
+
+			case "id":
+				wait.until(ExpectedConditions.elementToBeClickable(By.id(locatorValue)));
+				actions.moveToElement(driver.findElement(By.id(locatorValue))).click().perform();
+				break;
+
+			case "class_name":
+				wait.until(ExpectedConditions.elementToBeClickable(By.className(locatorValue)));
+				actions.moveToElement(driver.findElement(By.className(locatorValue))).click().perform();
+				break;
+				
+			case "name":
+				wait.until(ExpectedConditions.elementToBeClickable(By.className(locatorValue)));
+				actions.moveToElement(driver.findElement(By.name(locatorValue))).click().perform();
+				break;	
+						
+			case "linkText":
+				wait.until(ExpectedConditions.elementToBeClickable(By.className(locatorValue)));
+				actions.moveToElement(driver.findElement(By.linkText(locatorValue))).click().perform();
+				break;	
+				
+			case "partialLinkText":
+				wait.until(ExpectedConditions.elementToBeClickable(By.className(locatorValue)));
+				actions.moveToElement(driver.findElement(By.partialLinkText(locatorValue))).click().perform();
+				break;
+				
+			case "title":
+				wait.until(ExpectedConditions.elementToBeClickable(By.className(locatorValue)));
+				actions.moveToElement(driver.findElement(By.xpath("//*[@title = '" + locatorValue + "']"))).click().perform();
+				break;	
+						
+			case "value":
+				wait.until(ExpectedConditions.elementToBeClickable(By.className(locatorValue)));
+				actions.moveToElement(driver.findElement(By.xpath("//*[@value = '" + locatorValue + "']"))).click().perform();
+				break;	
+
+
+			// add more case statements here.
+
+			default:
+				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				return 0;
+			}// switch ends here
+
+			return 1;
+			
+		} catch (Exception e) {
+			String exceptionMessage = exceptionalCondition(fileName, data,
+					stepNumber, currentSheet, e);
+			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			return 0;
+		}
+				
 	}
 
 	/**
@@ -737,9 +901,28 @@ public class Utils extends DriverScript {
 				break;
 
 			case "class_name":
-
 				actualValue = driver.findElement(By.className(locatorValue)).getText();
 				break;
+				
+			case "name":
+				actualValue = driver.findElement(By.name(locatorValue)).getText();
+				break;	
+						
+			case "linkText":
+				actualValue = driver.findElement(By.linkText(locatorValue)).getText();
+				break;	
+				
+			case "partialLinkText":
+				actualValue = driver.findElement(By.partialLinkText(locatorValue)).getText();
+				break;
+				
+			case "title":
+				actualValue = driver.findElement(By.xpath("//*[@title = '" + locatorValue + "']")).getText();
+				break;	
+						
+			case "value":
+				actualValue = driver.findElement(By.xpath("//*[@value = '" + locatorValue + "']")).getText();
+				break;	
 
 			// add more case statements here.
 
@@ -805,6 +988,26 @@ public class Utils extends DriverScript {
 			case "class_name":
 				driver.findElement(By.className(locatorValue));
 				break;
+				
+			case "name":
+				driver.findElement(By.name(locatorValue));
+				break;	
+						
+			case "linkText":
+				driver.findElement(By.linkText(locatorValue));
+				break;	
+				
+			case "partialLinkText":
+				driver.findElement(By.partialLinkText(locatorValue));
+				break;
+				
+			case "title":
+				driver.findElement(By.xpath("//*[@title = '" + locatorValue + "']"));
+				break;	
+						
+			case "value":
+				driver.findElement(By.xpath("//*[@value = '" + locatorValue + "']"));
+				break;	
 
 			// add more case statements here.
 
@@ -835,7 +1038,8 @@ public class Utils extends DriverScript {
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
 
-	public int assert_no_presence(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,String currentSheet) {
+	public int assert_no_presence(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,
+			String currentSheet) {
 		
 		String locatorValue = "";
 		List numberOfElements = new ArrayList();
@@ -848,6 +1052,7 @@ public class Utils extends DriverScript {
 			}
 
 			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			
 			switch (data.get(3)) { // switch starts here.
 
 			case "xpath":
@@ -861,6 +1066,26 @@ public class Utils extends DriverScript {
 			case "class_name":
 				numberOfElements = driver.findElements(By.className(locatorValue));
 				break;
+				
+			case "name":
+				numberOfElements = driver.findElements(By.name(locatorValue));
+				break;	
+						
+			case "linkText":
+				numberOfElements = driver.findElements(By.linkText(locatorValue));
+				break;	
+				
+			case "partialLinkText":
+				numberOfElements = driver.findElements(By.partialLinkText(locatorValue));
+				break;
+				
+			case "title":
+				numberOfElements = driver.findElements(By.xpath("//*[@title = '" + locatorValue + "']"));
+				break;	
+						
+			case "value":
+				numberOfElements = driver.findElements(By.xpath("//*[@value = '" + locatorValue + "']"));
+				break;	
 
 			// add more case statements here.
 
@@ -874,7 +1099,7 @@ public class Utils extends DriverScript {
 				appLogs.error("Execution Failed :  For Action " + data.get(2)
 						+ " in Step number " + stepNumber + " of Sheet "
 						+ currentSheet);
-				getScreenshot(fileName, currentSheet, stepNumber, "Execution Failed :  For Action " + data.get(2)
+				getScreenshot(fileName, currentSheet, stepNumber, "Assertion Failed :  For Action " + data.get(2)
 						+ " in Step number " + stepNumber + " of Sheet " + currentSheet );
 				return 0;
 			} 
@@ -917,8 +1142,8 @@ public class Utils extends DriverScript {
 			}
 
 			dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
-			Thread.sleep(1000);
 
+			/*Assert the text in the Alert pop up */
 			if (!(alert.getText().equals(dataParam))) {
 				appLogs.error("Execution Failed: Alert Text does not match with Argument Provided for Action "
 						+ data.get(2)+ " in Step number "+ stepNumber+ " of Sheet " + currentSheet);
@@ -934,12 +1159,65 @@ public class Utils extends DriverScript {
 
 			return 1;
 
+		} 
+		
+		catch (Exception e) {
+			String exceptionMessage = exceptionalCondition(fileName, data,stepNumber, currentSheet, e);
+			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			return 0;
+		}
+	}
+	
+	/**
+	 * Verify the browser alert box on the page and click on 'OK' button. 
+	 * 
+	 * @param fileName -  Name of the currently executing file
+	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
+	 * @param variables - All the variables (specified in config sheet and during run time) for the file
+	 * @param stepNumber - Currently executing Row in the sheet.
+	 * @param currentSheet - Name of the current executing Sheet
+	 * @return 0 in case of Failure and 1 in case of Successfully Execution
+	 */
+	public int click_alert_box_cancel(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber,
+			String currentSheet) {
+
+		Alert alert = driver.switchTo().alert();
+
+		String dataParam = "";
+		String locatorValue = "";
+
+		try {
+			/* check if required parameters for this action are missing or not */ 
+			if (data.get(5).equals("N/A")) {
+				missingArgs(fileName, data, stepNumber, currentSheet);
+				return 0;
+			}
+
+			dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
+
+			/*Assert the text in the Alert pop up */
+			if (!(alert.getText().equals(dataParam))) {
+				appLogs.error("Execution Failed: Alert Text does not match with Argument Provided for Action "
+						+ data.get(2)+ " in Step number "+ stepNumber+ " of Sheet " + currentSheet);
+				appLogs.info("Actual Value :" + alert.getText() + "-----"+ " Exceted Value : " + dataParam);
+
+				getScreenshot(fileName, currentSheet, stepNumber,"Execution Failed at Step " + stepNumber
+								+ " due to in correct alert pop up message - "+ " Actual Value :" + alert.getText()
+								+ " ----- " + " Expected Value : " + dataParam);
+				return 0;
+			}
+
+			alert.dismiss(); // Clicks on dismiss button in the Alert window.
+
+			return 1;
+
 		} catch (Exception e) {
 			String exceptionMessage = exceptionalCondition(fileName, data,stepNumber, currentSheet, e);
 			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
 			return 0;
 		}
 	}
+
 
 	/**
 	 * Select a element from the drop down (to be used only with the web elements that have 
@@ -963,8 +1241,6 @@ public class Utils extends DriverScript {
 				missingArgs(fileName, data, stepNumber, currentSheet);
 				return 0;
 			}
-
-			Thread.sleep(1000);
 			
 			dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
 			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
@@ -1010,10 +1286,10 @@ public class Utils extends DriverScript {
 	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-
 	public int mouse_over(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber, String currentSheet) {
 		
 		String locatorValue = "";
+		
 		try {
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")) {
 				missingArgs(fileName, data, stepNumber, currentSheet);
@@ -1077,6 +1353,7 @@ public class Utils extends DriverScript {
 			}
 
 			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			
 			if(data.get(5).toString().substring(0, 5).equals("var <")){
 				key = data.get(5).toString().substring(3).trim();
 			}
@@ -1098,6 +1375,27 @@ public class Utils extends DriverScript {
 			case "class_name":
 				value = driver.findElement(By.className(locatorValue)).getText();
 				break;
+				
+			case "name":
+				value = driver.findElement(By.name(locatorValue)).getText();
+				break;	
+						
+			case "linkText":
+				value = driver.findElement(By.linkText(locatorValue)).getText();
+				break;	
+				
+			case "partialLinkText":
+				value = driver.findElement(By.partialLinkText(locatorValue)).getText();
+				break;
+				
+			case "title":
+				value = driver.findElement(By.xpath("//*[@title = '" + locatorValue + "']")).getText();
+				break;	
+						
+			case "value":
+				value = driver.findElement(By.xpath("//*[@value = '" + locatorValue + "']")).getText();
+				break;	
+
 
 			// add more case statements here.
 
@@ -1165,6 +1463,26 @@ public class Utils extends DriverScript {
 			case "class_name":
 				value = driver.findElement(By.className(locatorValue)).getAttribute("value");
 				break;
+				
+			case "name":
+				value = driver.findElement(By.name(locatorValue)).getAttribute("value");
+				break;	
+						
+			case "linkText":
+				value = driver.findElement(By.linkText(locatorValue)).getAttribute("value");
+				break;	
+				
+			case "partialLinkText":
+				value = driver.findElement(By.partialLinkText(locatorValue)).getAttribute("value");
+				break;
+				
+			case "title":
+				value = driver.findElement(By.xpath("//*[@title = '" + locatorValue + "']")).getAttribute("value");
+				break;	
+						
+			case "value":
+				value = driver.findElement(By.xpath("//*[@value = '" + locatorValue + "']")).getAttribute("value");
+				break;	
 
 			// add more case statements here.
 
@@ -1196,7 +1514,8 @@ public class Utils extends DriverScript {
 	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int store_element_title(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber,String currentSheet) {
+	public int store_element_title(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber
+			,String currentSheet) {
 	
 		String key = null;
 		String value = null;
@@ -1233,6 +1552,26 @@ public class Utils extends DriverScript {
 			case "class_name":
 				value = driver.findElement(By.className(locatorValue)).getAttribute("title");
 				break;
+				
+			case "name":
+				value = driver.findElement(By.name(locatorValue)).getAttribute("title");
+				break;	
+						
+			case "linkText":
+				value = driver.findElement(By.linkText(locatorValue)).getAttribute("title");
+				break;	
+				
+			case "partialLinkText":
+				value = driver.findElement(By.partialLinkText(locatorValue)).getAttribute("title");
+				break;
+				
+			case "title":
+				value = driver.findElement(By.xpath("//*[@title = '" + locatorValue + "']")).getAttribute("title");
+				break;	
+						
+			case "value":
+				value = driver.findElement(By.xpath("//*[@value = '" + locatorValue + "']")).getAttribute("title");
+				break;	
 
 			// add more case statements here.
 
@@ -1264,7 +1603,8 @@ public class Utils extends DriverScript {
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
 
-	public int upload_file(String fileName, ArrayList<String> data,	HashMap<String, String> variables, String stepNumber,String currentSheet) {
+	public int upload_file(String fileName, ArrayList<String> data,	HashMap<String, String> variables, String stepNumber,
+			String currentSheet) {
 
 		String dataParam = "";
 		String locatorValue = " ";
@@ -1303,6 +1643,7 @@ public class Utils extends DriverScript {
 				driver.findElement(By.className(locatorValue)).sendKeys(dataParam);
 				break;
 
+				
 			// add more case statements here.
 
 			default:
@@ -1321,6 +1662,8 @@ public class Utils extends DriverScript {
 		}
 		
 	}
+	
+	
 
 	/**
 	 * 
@@ -1401,6 +1744,34 @@ public class Utils extends DriverScript {
 		}
 
 	}
+	
+	
+	/**
+	 * Quits the browser 
+	 * 
+	 * @param fileName - Name of currently Executing File
+	 * @param stepNumber - Currently executing row number 
+	 * @param sheetName - Currently Executing Sheet
+	 * @param status - Status of the currently executing sheet for which quit is called.(0-FAIL , 1- PASS)
+	 * @return - N/A
+	 */
+	public void quit(String fileName, String sheetName, int status) {
+
+		if (status == 1) {
+			appLogs.info("< ------ Successfully Completed the execution for sheet : "+ sheetName + " in File : " + fileName + "------ >");
+			createResultSet(fileName, sheetName, "PASS", "N/A", "N/A");
+		} else
+			appLogs.error("< ------ Executon failed for sheet :" + sheetName + " ------ >");
+
+		driver.close();
+		//driver.quit();
+	}
+	
+	
+	
+	
+	
+	/* <------------------------------------------ Non-Selenium Methods ---------------------------------------------------- >*/
 
 	/**
 	 * Takes the data from a 'Locator Value' and 'Test Data/Options' column and adds and updates them for 
@@ -1527,28 +1898,6 @@ public class Utils extends DriverScript {
 		return e.getMessage().toString();
 	}
 	
-
-	/**
-	 * Quit the browser 
-	 * 
-	 * @param fileName - Name of currently Executing File
-	 * @param stepNumber - Currently executing row number 
-	 * @param sheetName - Currently Executing Sheet
-	 * @param status - Status of the currently executing sheet for which quit is called.(0-FAIL , 1- PASS)
-	 * @return - N/A
-	 */
-	public void quit(String fileName, String sheetName, int status) {
-
-		if (status == 1) {
-			appLogs.info("< ------ Successfully Completed the execution for sheet : "+ sheetName + " in File : " + fileName + "------ >");
-			createResultSet(fileName, sheetName, "PASS", "N/A", "N/A");
-		} else
-			appLogs.error("< ------ Executon failed for sheet :" + sheetName + " ------ >");
-
-		driver.close();
-		//driver.quit();
-	}
-
 	
 	/**
 	 * Takes screenshot in case of any failure

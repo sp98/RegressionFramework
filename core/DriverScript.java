@@ -599,7 +599,7 @@ public class DriverScript extends XLReading  {
 
 		
 		final CountDownLatch latch = new CountDownLatch(sheetData.size());
-		ExecutorService taskExecutor = Executors.newFixedThreadPool(5);
+		ExecutorService taskExecutor = Executors.newFixedThreadPool(3);
 		
 		for (final String fileKey : sheetData.keySet()) {
 			
