@@ -554,7 +554,8 @@ public class DriverScript extends XLReading  {
 		for (String keys : allXlReaderObjs.keySet()) {
 			for (Workbook keys2 : allXlReaderObjs.get(keys).keySet()) {
 
-				appLogs.info("Executable Sheets in file " + keys + " are : "
+				appLogs.info("Executable Sheets in file " + keys + " are " 
+						 + allXlReaderObjs.get(keys).get(keys2).size() + " : "
 						+ allXlReaderObjs.get(keys).get(keys2));
 			}
 		}

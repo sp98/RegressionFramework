@@ -76,16 +76,16 @@ public class Utils extends DriverScript {
 		//parallelCounter++;
 		allCommonSheetVars = allCommonSheetVariables;
 		//System.out.println(parallelCounter);
-		int status = -1;
-		String row = "";
+		int status = -1;     //Declare the status of each method execution to be -1 by default. 
+		String row = "";     //To keep track of the currently executing row in the sheet.
 		
 		appLogs.debug("Called by thread : "  +Thread.currentThread().getName());
 		
 		appLogs.info("Launching " + sheetInfo[2] + " browser .....");
 		
 		try {
-		/* lanuch the browser */ 
-		launch_browser(sheetInfo[2]);
+			
+		launch_browser(sheetInfo[2]);   //This method is used to launch the browser. 
 
 		appLogs.info("");
 		appLogs.info("< ----------- Starting Execution for sheet : " + sheetInfo[1]
@@ -322,6 +322,25 @@ public class Utils extends DriverScript {
 					return 0;
 				}
 				break;
+			
+				
+			case "slider_action":
+				status = 0;
+				status = slider_action(sheetInfo[0], sheetMatrix.get(i),
+						fileVariables, row, sheetInfo[1]);
+				if (status == 0) {
+					return 0;
+				}
+				break;
+			case "drag_drop":
+				status = 0;
+				status = drag_drop(sheetInfo[0], sheetMatrix.get(i),
+						fileVariables, row, sheetInfo[1]);
+				if (status == 0) {
+					return 0;
+				}
+				break;
+		   
 
 			//Not working
 			case "assert_query":
@@ -388,7 +407,7 @@ public class Utils extends DriverScript {
     		}
 
     		driver.manage().window().maximize();  //maximize the browser window.
-    		driver.manage().timeouts().implicitlyWait(15, TimeUnit.SECONDS); // provide implicit wait before throwing NoSuchElementException.
+    		driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS); // provide implicit wait before throwing NoSuchElementException.
     		//wait = new WebDriverWait(driver, 30);
     		actions = new Actions(driver);  //create object for Actions call for each driver instance
     		
@@ -699,7 +718,7 @@ public class Utils extends DriverScript {
 	public int click_wait(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber,
 			String currentSheet) {
 		
-		wait = new WebDriverWait(driver, 20);  //Creating a new WebDriverWait and passing the WebDriver and TimeOut
+		wait = new WebDriverWait(driver, 30);  //Creating a new WebDriverWait and passing the WebDriver and TimeOut
 		String locatorValue = " ";
 		
 		try {
@@ -1663,6 +1682,258 @@ public class Utils extends DriverScript {
 		
 	}
 	
+	
+	/**
+	 * Perform Slider action.
+	 * 
+	 * @param fileName -  Name of the currently executing file
+	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
+	 * @param variables - All the variables (specified in config sheet and during run time) for the file
+	 * @param stepNumber - Currently executing Row in the sheet.
+	 * @param currentSheet - Name of the current executing Sheet
+	 * @return 0 in case of Failure and 1 in case of Successfully Execution
+	 */
+	
+	public int slider_action(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,
+			String currentSheet){
+		
+		WebElement toSlide = null; //WebElement that is to be slided.
+		String xoffset = ""; //horizontal offset value 
+		String yoffset = ""; //vertical offset value
+		String locatorValue = " "; //xpath, id, etc., locator value of the WebElement
+		
+		/* check if required parameters for this action are missing or not */ 
+		if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
+			missingArgs(fileName, data, stepNumber, currentSheet);
+			return 0;
+			
+		}
+		
+		if(data.get(5).split(",").length!=2){
+			appLogs.error("Execution Failed: Missing Arugments for the Action " + data.get(2) 
+				    + " in Step number " + stepNumber + " of Sheet "+ currentSheet);
+		
+		   createResultSet(fileName, currentSheet, "FAIL","Incorrect offset Format provided for the action " + data.get(2)
+						+ " in Step number " + stepNumber + " of Sheet "+ currentSheet, "N/A");
+		
+		   quit(fileName, currentSheet, 0); //Quit the browser due to Execution Failure
+		   
+		   return 0;
+		}
+		
+		locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+		xoffset= getDataParam(fileName, currentSheet, data, variables, data.get(5).split(",")[0].trim());
+		yoffset= getDataParam(fileName, currentSheet, data, variables, data.get(5).split(",")[1].trim());
+		
+		try{
+			
+		
+		switch (data.get(3)) { // switch starts here.
+
+		case "xpath":
+			toSlide= driver.findElement(By.xpath(locatorValue));
+			break;
+
+		case "id":
+			toSlide = driver.findElement(By.id(locatorValue));
+			break;
+
+		case "class_name":
+			toSlide = driver.findElement(By.className(locatorValue));
+			break;
+			
+		case "name":
+			toSlide = driver.findElement(By.name(locatorValue));
+			break;	
+					
+		case "linkText":
+			toSlide = driver.findElement(By.linkText(locatorValue));
+			break;	
+			
+		case "partialLinkText":
+			toSlide = driver.findElement(By.partialLinkText(locatorValue));
+			break;
+			
+		case "title":
+			toSlide = driver.findElement(By.xpath("//*[@title = '" + locatorValue + "']"));
+			break;	
+					
+		case "value":
+			toSlide = driver.findElement(By.xpath("//*[@value = '" + locatorValue + "']"));
+			break;	
+
+		// add more case statements here.
+
+		default:
+			incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+			return 0;
+		}// switch ends here
+		
+		
+		actions.dragAndDropBy(toSlide, Integer.parseInt(xoffset), Integer.parseInt(yoffset)).build().perform(); //Perform Slide functionality over here.
+		
+		return 1;
+		
+		
+		}
+		catch(Exception e){
+			String exceptionMessage = exceptionalCondition(fileName, data,stepNumber, currentSheet, e);
+			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			return 0;		
+		}
+	}
+	
+	
+	/**
+	 * Drags one element on to another.
+	 * 
+	 * @param fileName -  Name of the currently executing file
+	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
+	 * @param variables - All the variables (specified in config sheet and during run time) for the file
+	 * @param stepNumber - Currently executing Row in the sheet.
+	 * @param currentSheet - Name of the current executing Sheet
+	 * @return 0 in case of Failure and 1 in case of Successfully Execution
+	 */
+	
+	
+	public int drag_drop(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,
+			String currentSheet){
+		
+		WebElement source = null;   //WebElement that is to be dragged.
+		WebElement target = null; //WebElement that is to dragged on to.
+		String sourceLocatorType = ""; //Locator Type of the element that is to be dragged.
+		String targetLocatorType = ""; //Locator Type of the element that is to be dragged.
+		String sourceLocatorValue = "";   //Locator Value of the element that is to be dragged.
+		String targetLocatorValue = "";   //Locator value of the element that is to be dragged on to.
+		
+		/* check if required parameters for this action are missing or not */ 
+		if (data.get(3).equals("N/A") || data.get(3).split(";;").length!=2 || 
+				data.get(4).equals("N/A") || data.get(4).split(";;").length!=2) {
+			missingArgs(fileName, data, stepNumber, currentSheet);
+			return 0;
+			
+		}
+		
+		/*get the locator value both the elements*/
+		sourceLocatorType = data.get(3).split(";;")[0];
+		targetLocatorType = data.get(3).split(";;")[1];
+		
+		/*Get the Locator Value for both the elements */
+		sourceLocatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4).split(";;")[0]);
+		targetLocatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4).split(";;")[1]);
+		
+      try{
+			
+			switch (sourceLocatorType) { // switch starts here.
+
+			case "xpath":
+				source = driver.findElement(By.xpath(sourceLocatorValue));
+				break;
+
+			case "id":
+				source = driver.findElement(By.id(sourceLocatorValue));
+				break;
+
+			case "class_name":
+				source = driver.findElement(By.className(sourceLocatorValue));
+				break;
+				
+			case "name":
+				source = driver.findElement(By.name(sourceLocatorValue));
+				break;	
+						
+			case "linkText":
+				source =  driver.findElement(By.linkText(sourceLocatorValue));
+				 break;
+				
+			case "partialLinkText":
+				source = driver.findElement(By.partialLinkText(sourceLocatorValue));
+				break;
+				
+			case "title":
+				source = driver.findElement(By.xpath("//*[@title = '" + sourceLocatorValue + "']"));
+				break;	
+						
+			case "value":
+				source = driver.findElement(By.xpath("//*[@value = '" + sourceLocatorValue + "']"));
+				break;
+            
+				
+			// add more case statements here.
+
+			default:
+				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				return 0;
+				
+			}// switch ends here
+			
+			
+			switch (targetLocatorType) { // switch starts here.
+
+			case "xpath":
+				target = driver.findElement(By.xpath(targetLocatorValue));
+				break;
+
+			case "id":
+				target = driver.findElement(By.id(targetLocatorValue));
+				break;
+
+			case "class_name":
+				target = driver.findElement(By.className(targetLocatorValue));
+				break;
+				
+			case "name":
+				target = driver.findElement(By.name(targetLocatorValue));
+				break;	
+						
+			case "linkText":
+				target =  driver.findElement(By.linkText(targetLocatorValue));
+				 break;
+				
+			case "partialLinkText":
+				target = driver.findElement(By.partialLinkText(targetLocatorValue));
+				break;
+				
+			case "title":
+				target = driver.findElement(By.xpath("//*[@title = '" + targetLocatorValue + "']"));
+				break;	
+						
+			case "value":
+				target = driver.findElement(By.xpath("//*[@value = '" + targetLocatorValue + "']"));
+				break;
+            
+				
+			// add more case statements here.
+
+			default:
+				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				return 0;
+				
+			}// switch ends here
+		
+			appLogs.info("Source Element: "  + source.toString() + " -- "+ sourceLocatorType + " --" + sourceLocatorValue );
+			appLogs.info("Target Element: " + target.toString() + " -- " + targetLocatorType + " --" + targetLocatorValue );
+			
+			 //Both the below actions are not working. 
+			//actions.dragAndDrop(source, target).build().perform();   //Perform the drag operation.
+			//actions.clickAndHold(source).moveToElement(target).release(target).build().perform(); //Perform the drag operation.
+			
+			actions.clickAndHold(source).perform();
+			Thread.sleep(1000);
+			actions.moveToElement(target).perform();
+			Thread.sleep(1000);
+			actions.release(target).perform();
+			 
+			return 1;
+			
+		}
+		catch(Exception e){
+			String exceptionMessage = exceptionalCondition(fileName, data,stepNumber, currentSheet, e);
+			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			return 0;				
+		}		
+		
+	}
 	
 
 	/**

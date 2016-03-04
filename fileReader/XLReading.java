@@ -246,7 +246,7 @@ public class XLReading {
 			}
 		}
 		
-		return null;
+		return "N/A";
 		
 	}
 	
