@@ -33,6 +33,7 @@ public class DriverScript extends XLReading  {
 	private String masterFileName = "MasterSheet"; //Name of the MasterSheet to read all the executable sheets.
 	private String configSheet = "config";
 	private String runMode = "";  // Daily/Weekly/Release Run mode. 
+	private int thread_Count= 0;
 
 	/*Result Set Data Structure*/
 	private static LinkedHashMap<String, ArrayList<String>> resultSet = null;
@@ -125,14 +126,20 @@ public class DriverScript extends XLReading  {
 		Sheet sheet = xlReader.getSheet(configSheet);
 		executableFiles = getDataBelowCol(sheet, requiredColHeader1,
 				requiredColHeader2, runMode);
-
-		/* Print all the Executable files in the console */
-		/*appLogs.info("Total Executable Files in MasterSheet are "
-				+ executableFiles.size() + ". These are :");
-
-		for (String fileName : executableFiles) {
-			appLogs.info(fileName);
-		} */
+		
+		/*Set the Thread count from the MasterSheet config */
+		try{
+			if(Integer.parseInt(getValueAfterCell(xlReader.getSheetAt(0), "Num_Threads"))>0)
+				thread_Count= Integer.parseInt(getValueAfterCell(xlReader.getSheetAt(0), "Num_Threads"));	//set the thread count value.
+			else
+				thread_Count = 2;   //keep the default thread count value to 2 if nothing is specified.
+		}
+		catch(Exception e){
+			appLogs.info("Execption Raised : Incorrect Thread count Provided in the Master sheet- "
+		       + e.getMessage());		
+		}
+			
+		appLogs.debug("Total Thread Count : " + thread_Count);
 
 	}
 	
@@ -293,24 +300,18 @@ public class DriverScript extends XLReading  {
 			second: //Second for Loop Label
 				/*Loop through all the executable Sheets using there WorkBook Objects */
 				for (Workbook keys2 : allXlReaderObjs.get(keys).keySet()) {
-				appLogs.debug("Exact Sheets in file " + keys + " are : "+ allXlReaderObjs.get(keys).get(keys2));
-				String browser = "";
-				browser = getValueAfterCell(keys2.getSheetAt(0), "Browser");
-				appLogs.debug("Run file " + fileName + " in " + browser + " browser.");
-				if (browser.equals("")) {
-					appLogs.error("Browser is not mentioned in the file : "+ fileName); // No browser name displayed in the file. Skip it and 
-					                                                                    //continue with the next file.
-					continue second;
-				} else {
-					appLogs.debug("Browser name is displayed");
-				}
+				  appLogs.debug("Exact Sheets in file " + keys + " are : "+ allXlReaderObjs.get(keys).get(keys2));
+				  
+				  String browser = "";                   //Declare the String variable browser.
+				  browser = getValueAfterCell(keys2.getSheetAt(0), "Browser");   //Get the value of the browser value from the config sheet.
+				  appLogs.debug("Run file " + fileName + " in " + browser + " browser.");
 
 				third: // Third for Loop Label.
 					
 					for (int i = 0; i < allXlReaderObjs.get(keys).get(keys2).size(); i++) {
-					Workbook sheetReader = keys2;
-					String sheetName = allXlReaderObjs.get(keys).get(keys2).get(i);
-					Sheet currentSheet = sheetReader.getSheet(sheetName);
+					  Workbook sheetReader = keys2;
+					  String sheetName = allXlReaderObjs.get(keys).get(keys2).get(i);
+					  Sheet currentSheet = sheetReader.getSheet(sheetName);
 
 					/* check if the sheetname provided in the config is actually present in the file */
 					if (!verifySheetPresence(sheetReader, sheetName)) {
@@ -585,6 +586,9 @@ public class DriverScript extends XLReading  {
 		}	
 		
 		appLogs.info(" ");
+		
+		appLogs.info("Total Thread Count : " + thread_Count);
+		appLogs.info(" ");
 	}
 
 	
@@ -600,7 +604,7 @@ public class DriverScript extends XLReading  {
 
 		
 		final CountDownLatch latch = new CountDownLatch(sheetData.size());
-		ExecutorService taskExecutor = Executors.newFixedThreadPool(3);
+		ExecutorService taskExecutor = Executors.newFixedThreadPool(thread_Count);
 		
 		for (final String fileKey : sheetData.keySet()) {
 			
