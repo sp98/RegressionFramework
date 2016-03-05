@@ -26,7 +26,11 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.phantomjs.PhantomJSDriver;
+import org.openqa.selenium.phantomjs.PhantomJSDriverService;
+import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -43,6 +47,7 @@ public class Utils extends DriverScript {
 	private Logger appLogs = null; //declaring Logger class Object for logging purpose
 	WebDriverWait wait = null;     //
 	Actions actions = null;        //declaring an Actions API class object
+	DesiredCapabilities  caps = null;
 	
 	LinkedHashMap<String, HashMap<String, String>> allCommonSheetVars= null;    // declaring a linked HashMap variable
 	//public static int parallelCounter = 0;  //counter used to control the parallel processing
@@ -57,7 +62,6 @@ public class Utils extends DriverScript {
 		org.apache.log4j.PropertyConfigurator.configure(System
 				.getProperty("user.dir") + "/log4j.properties");
 		appLogs = Logger.getRootLogger();
-
 	}
 	
 	/**
@@ -74,6 +78,8 @@ public class Utils extends DriverScript {
 			HashMap<String, String> fileVariables , LinkedHashMap<String,HashMap<String, String>> allCommonSheetVariables) {
 
 		//parallelCounter++;
+		
+		
 		allCommonSheetVars = allCommonSheetVariables;
 		//System.out.println(parallelCounter);
 		int status = -1;     //Declare the status of each method execution to be -1 by default. 
@@ -85,7 +91,11 @@ public class Utils extends DriverScript {
 		
 		try {
 			
-		launch_browser(sheetInfo[2]);   //This method is used to launch the browser. 
+		status= launch_browser(sheetInfo[2], sheetInfo);   //This method is used to launch the browser. 
+		if (status == 0) {
+			return 0;                                      //Stops further execution if the browser launch is failed.
+		}
+		
 
 		appLogs.info("");
 		appLogs.info("< ----------- Starting Execution for sheet : " + sheetInfo[1]
@@ -252,9 +262,7 @@ public class Utils extends DriverScript {
 
 			case "click_if_exists":
 				break;
-
 				
-			
 				
 			case "click_button_wait":
 				break;
@@ -371,8 +379,9 @@ public class Utils extends DriverScript {
 		catch(Exception e){
 			//appLogs.info(parallelCounter);
 			appLogs.info("Exception Raised by Thread - " + Thread.currentThread().getName());
-			createResultSet(sheetInfo[0], sheetInfo[1], "FAIL", e.getMessage().toString(),"N/A");
-			return 0;			
+			createResultSet(sheetInfo[0], sheetInfo[1], "FAIL", e.getMessage(),"N/A");
+			return 0;	
+			//e.getMessage().toString()
 		}
 		
 		finally{
@@ -386,34 +395,51 @@ public class Utils extends DriverScript {
 	 * Launches the browser to perform the test.
 	 * @param browser - the name of the browser to be launched.
 	 */
-	public void launch_browser(String browser) {
+	public int launch_browser(String browser, String [] sheetInfo) {
 		//WebDriver driver = null;
 		
         try{
-        	      	
-        	//appLogs.info("Inside Launch browser " + Thread.currentThread().getName());
-    		if (browser.equalsIgnoreCase("chrome")) {
-    			//appLogs.info("Running Chrome browser" + Thread.currentThread().getName());
-    			File browserFilePath = new File(System.getProperty("user.dir")+ "//Input//Drivers//chromedriver.exe");
-    			System.setProperty("webdriver.chrome.driver", browserFilePath.getAbsolutePath());
-    			//System.setProperty("webdriver.chrome.driver",System.getProperty("user.dir")+ "//Input//Drivers//chromedriver.exe");
-    			//appLogs.info("Browser launched by " + Thread.currentThread().getName());			
+        	
+        	switch(browser){
+        	case "chrome":
+        	case "Chrome":
+    			System.setProperty("webdriver.chrome.driver",System.getProperty("user.dir")+ "//Input//Drivers//chromedriver.exe");			
     			driver = new ChromeDriver();
-    			
-    		}
+        	    break;
+        	
+        	case "firefox" :
+        	case "Firefox" :
+        		driver = new FirefoxDriver();
+        	    break;
+        	
+        	case "headless":
+        	case "Headless" :
+        		caps = new DesiredCapabilities();
+        		caps.setJavascriptEnabled(true);	
+        		caps.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, new String[] {"--web-security=no", "--ignore-ssl-errors=yes"});
+        		//caps.setCapability("trustAllSSLCertificates", true);
+        		caps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, System.getProperty("user.dir")+ "//Input//Drivers//phantomjs.exe");
 
-    		if (browser.equalsIgnoreCase("firefox")) {
-    			 driver = new FirefoxDriver();
-    		}
-
-    		driver.manage().window().maximize();  //maximize the browser window.
-    		driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS); // provide implicit wait before throwing NoSuchElementException.
-    		//wait = new WebDriverWait(driver, 30);
-    		actions = new Actions(driver);  //create object for Actions call for each driver instance
-    		
+        		driver = new PhantomJSDriver(caps);
+        	break;
+        	
+        	default :
+        		appLogs.error("Execution Failed: Incorrect browser name in the config sheet in file - " + sheetInfo[0]);
+        		createResultSet(sheetInfo[0], sheetInfo[1], "FAIL","Incorrect or Empty browser name in the config sheet in file - " + sheetInfo[0]
+        				+ ". Try 'chrome', 'firefox' or 'headless' browser options.", "N/A");  
+        	    return 0;     	
+        	
+        	}
+        	
+    		 driver.manage().window().maximize();  //maximize the browser window.	
+    		 driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS); // provide implicit wait before throwing NoSuchElementException.
+     		 actions = new Actions(driver);  //create object for Actions call for each driver instance 
+     		 
+     		 return 1;
         }
 		catch(Exception e){
-	     appLogs.info("Error is lauching by " + Thread.currentThread().getName() + e.getMessage());
+	     appLogs.info("Exception in launching the browser by " + Thread.currentThread().getName() + e.getMessage());
+	     return 0;
 		}
 		
 
