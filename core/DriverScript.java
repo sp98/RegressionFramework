@@ -34,6 +34,9 @@ public class DriverScript extends XLReading  {
 	private String configSheet = "config";
 	private String runMode = "";  // Daily/Weekly/Release Run mode. 
 	private int thread_Count= 0;
+	public static boolean enable_grid= false;
+	private static String raw_grid_config = null;
+	private boolean gridConfigCreationStatus = false;
 
 	/*Result Set Data Structure*/
 	private static LinkedHashMap<String, ArrayList<String>> resultSet = null;
@@ -58,6 +61,9 @@ public class DriverScript extends XLReading  {
 	private LinkedHashMap<String , HashMap<String, String>> allCommonSheetVariables = null;
 	HashMap<String, String> commonSheetVariables= null;
 
+	/*ArrayList of ArrayList to Store the Grid config*/
+	private ArrayList<ArrayList<String>> finalGridConfig = null;
+	private ArrayList<String> subGridConfig = null;
 	
 	private HTMLReport htmlReport = null;   // A reference to the HTMLReport class in the 'reporting' package.
 
@@ -79,7 +85,7 @@ public class DriverScript extends XLReading  {
 		allXlReaderObjs = new HashMap<String, HashMap<Workbook, ArrayList<String>>>();
 		sheetData = new LinkedHashMap<String, ArrayList<ArrayList<String>>>();
 		allCommonSheetVariables = new LinkedHashMap<String, HashMap<String, String>>();
-        
+		finalGridConfig = new ArrayList<ArrayList<String>>();
 		
 		htmlReport = new HTMLReport();  //initialize the object for HTMLReport class present in 'reporting' package
 	}
@@ -124,8 +130,7 @@ public class DriverScript extends XLReading  {
 		/*create the Workbook object to read data from the masterfile */
 		Workbook xlReader = POIObjectCreator(masterFile, masterFile.toString(),inputStream);
 		Sheet sheet = xlReader.getSheet(configSheet);
-		executableFiles = getDataBelowCol(sheet, requiredColHeader1,
-				requiredColHeader2, runMode);
+		executableFiles = getDataBelowCol(sheet, requiredColHeader1,requiredColHeader2, runMode);
 		
 		/*Set the Thread count from the MasterSheet config */
 		try{
@@ -140,9 +145,19 @@ public class DriverScript extends XLReading  {
 		}
 			
 		appLogs.debug("Total Thread Count : " + thread_Count);
-
-	}
-	
+		
+		/*Create Grid config if Enabled*/
+		if(getValueAfterCell(xlReader.getSheetAt(0), "Enable-Grid").equalsIgnoreCase("YES")){
+			enable_grid=true;
+			raw_grid_config = getValueAfterCell(xlReader.getSheetAt(0), "OS|NodeURL|Browsers");
+			gridConfigCreationStatus = createGridConfig(raw_grid_config);
+		}
+		
+		  appLogs.info("Is Grid Enabled?" + "--> " +enable_grid);
+		  appLogs.info("Grid config" + "--> " +raw_grid_config);
+		  appLogs.info("Grid Config Creation Status" + "-->" +gridConfigCreationStatus );
+		  appLogs.info("Final Grid Config is" + "-->" +finalGridConfig);
+		}
 	
 
 	/**
@@ -302,9 +317,13 @@ public class DriverScript extends XLReading  {
 				for (Workbook keys2 : allXlReaderObjs.get(keys).keySet()) {
 				  appLogs.debug("Exact Sheets in file " + keys + " are : "+ allXlReaderObjs.get(keys).get(keys2));
 				  
-				  String browser = "";                   //Declare the String variable browser.
-				  browser = getValueAfterCell(keys2.getSheetAt(0), "Browser");   //Get the value of the browser value from the config sheet.
-				  appLogs.debug("Run file " + fileName + " in " + browser + " browser.");
+				  String browser = "";  //Declare the String variable browser.
+				  if(!enable_grid){     //Initialize the Browser from individual sheet only of the Grid is not enabled.
+					  browser = getValueAfterCell(keys2.getSheetAt(0), "Browser");   //Get the value of the browser value from the config sheet.
+					  appLogs.debug("Run file " + fileName + " in " + browser + " browser.");  
+				  }
+				                   
+				 
 
 				third: // Third for Loop Label.
 					
@@ -356,8 +375,7 @@ public class DriverScript extends XLReading  {
 					if (actualPhysicalRows == 0) {
 						appLogs.error("There is no Quit Method in the current Sheet : "
 								  + sheetName + " in the file " + fileName);
-						createResultSet(fileName, sheetName, "FAIL",
-								  "There is no quit method at the end.", "N/A");
+						createResultSet(fileName, sheetName, "FAIL","There is no quit method at the end.", "N/A");
 						continue third; // Stop execution of the current Sheet as it has no Quit at the end.
 					}
 
@@ -512,7 +530,20 @@ public class DriverScript extends XLReading  {
 						 * Here, the key for each entry - 'File Name : Sheet Name : Browser' has all 
 						 * the data for the corresponding sheet. 
 						 */
-						sheetData.put(fileName + ":" + sheetName + ":"+ browser, sheetRowData);  //Add Complete Sheet Data to 'SheetData' hashmap.
+						if(!enable_grid){
+							sheetData.put(fileName + "::" + sheetName + "::"+ browser, sheetRowData);  //Add Complete Sheet Data to 'SheetData' hashmap.	
+						}
+						else{
+							for(ArrayList<String> subConfig :finalGridConfig){
+								
+								for(int m=2; m<=subConfig.size()-1;m++){
+									sheetData.put(fileName + "::" + sheetName +"::" + subConfig.get(0)+ "::" 
+											+ subConfig.get(1) + "::" + subConfig.get(m) , sheetRowData);
+								}
+							}
+							
+						}
+						
 
 						currentlyExecutingRowInMain++;
 
@@ -609,7 +640,7 @@ public class DriverScript extends XLReading  {
 		for (final String fileKey : sheetData.keySet()) {
 			
 			final Utils utils = new Utils();
-			final String[] sheetInfo =fileKey.split(":", 3);
+			final String[] sheetInfo =fileKey.split("::");
 			taskExecutor.execute( new Runnable(){
 
 				@Override
@@ -646,7 +677,10 @@ public class DriverScript extends XLReading  {
 
 		//test
 		htmlReport.checkResultDir();
+		if(!enable_grid)
 		htmlReport.makeHtmlReport(resultSet, executableFiles);
+		else
+		htmlReport.makeGridHtmlReport(resultSet, executableFiles);
 	}
 	
 
@@ -671,8 +705,8 @@ public class DriverScript extends XLReading  {
 	/**
 	 * Checks the 'Test Data/Options' for any dynamic variables and adds them to 
 	 * commonSheetVariables HashMap
-	 * @param fileName -  Name of the currently executing file
-	 * @param sheetName - Name of the current executing Sheet
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param commonSheetName - Name of the common sheet that is being called in the current row.
 	 * @param rowNumber - Current Executing row in the Main Sheet
 	 * @param slitVariables - String array of Variables defined in the Test Data/Options sheet separated by ,
@@ -713,8 +747,7 @@ public class DriverScript extends XLReading  {
 	 * @param exceptionMessage - The exception message that would have been raised.
 	 * @param screenshotPath - The screenshotName in case of any exception
 	 */
-	public void createResultSet(String FileName, String sheetName,
-			String status, String exceptionMessage, String screenshotPath) {
+	public void createResultSet(String FileName, String sheetName, String status, String exceptionMessage, String screenshotPath) {
 		appLogs.debug("Inside createResultSet Method");
 		subResultSet = new ArrayList<String>();
 		// subResultSet.add(sheetName);
@@ -722,8 +755,39 @@ public class DriverScript extends XLReading  {
 		subResultSet.add(exceptionMessage);
 		subResultSet.add(screenshotPath);
 
-		resultSet.put(FileName + ":" + sheetName, subResultSet);
+		resultSet.put(FileName + "::" + sheetName +"::" +"N/A"
+				+ "::" +"N/A"+ "::" +"N/A", subResultSet);
 	}
+	
+	/**
+	 * Overloaded method that Adds the execution results for each sheet in resultSet hashMap
+	 * 
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
+	 * @param status - 'PASS' or 'FAIL'
+	 * @param exceptionMessage - The exception message that would have been raised.
+	 * @param screenshotPath - The screenshotName in case of any exception
+	 */
+	public void createResultSet(String[] sheetInfo, String status, String exceptionMessage, String screenshotPath) {
+		appLogs.debug("Inside createResultSet Method");
+		subResultSet = new ArrayList<String>();
+		// subResultSet.add(sheetName);
+		subResultSet.add(status);
+		subResultSet.add(exceptionMessage);
+		subResultSet.add(screenshotPath);
+
+		//resultSet.put(FileName + ":" + sheetName, subResultSet);
+		if(!enable_grid){
+			resultSet.put(sheetInfo[0]+ "::" +sheetInfo[1]+ "::" +"N/A"
+					+ "::" +"N/A"+ "::" +"N/A", subResultSet);
+		}
+		else{
+			resultSet.put(sheetInfo[0]+ "::" +sheetInfo[1]+ "::" +sheetInfo[2]
+					+ "::" +sheetInfo[3]+ "::" +sheetInfo[4], subResultSet);
+		}
+		
+	}
+
 
 	
 	/**
@@ -752,6 +816,33 @@ public class DriverScript extends XLReading  {
 		}
 		return null;
 
+	}
+	
+	public boolean createGridConfig(String raw_grid_config){
+		
+		if(raw_grid_config.equals("")){
+			appLogs.error("Grid is enabled but no config info is provided");
+			return false;
+		}
+		
+	  String [] commaSplitedGridConfig = raw_grid_config.split(",");	
+	  
+	  for(String grid_config : commaSplitedGridConfig ){
+		  String [] pipeSplitedGridConfig = grid_config.split("\\|");
+		   if(pipeSplitedGridConfig.length<=2){
+			   appLogs.info(pipeSplitedGridConfig.length);
+			   return false;
+		   }
+		   else{
+			   subGridConfig = new ArrayList<String>();
+			   for(String config : pipeSplitedGridConfig){
+				   subGridConfig.add(config.trim());
+			   }
+			   finalGridConfig.add(subGridConfig);
+		   }
+	  }
+	  
+	  return true;
 	}
 
 }

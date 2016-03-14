@@ -279,9 +279,7 @@ public class XLReading {
 				}
 				if( cell.getCellType() == Cell.CELL_TYPE_STRING && cell.getStringCellValue().isEmpty() && sheetType.equals("commonSheet") ){
 					return cell.getRowIndex();
-				}
-						
-				
+				}			
 			}				
 			
 		}

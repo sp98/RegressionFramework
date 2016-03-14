@@ -6,6 +6,8 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -13,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
@@ -21,6 +24,7 @@ import org.openqa.selenium.Alert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.OutputType;
+import org.openqa.selenium.Platform;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -31,6 +35,7 @@ import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -87,13 +92,19 @@ public class Utils extends DriverScript {
 		
 		appLogs.debug("Called by thread : "  +Thread.currentThread().getName());
 		
-		appLogs.info("Launching " + sheetInfo[2] + " browser .....");
+		
 		
 		try {
-			
-		status= launch_browser(sheetInfo[2], sheetInfo);   //This method is used to launch the browser. 
-		if (status == 0) {
-			return 0;                                      //Stops further execution if the browser launch is failed.
+		if(!enable_grid){
+			appLogs.info("Launching " + sheetInfo[2] + " browser .....");
+			status= launch_browser(sheetInfo);   //This method is used to launch the browser. 
+			if (status == 0) {
+				return 0;                                      //Stops further execution if the browser launch is failed.
+			}	
+		}
+		else{
+			appLogs.info("Launching " + sheetInfo[4] + " browser .....");
+			launch_grid_browsers(sheetInfo);
 		}
 		
 
@@ -124,7 +135,7 @@ public class Utils extends DriverScript {
 
 			case "goto_url":
 				status = 0;
-				status = goto_url(sheetInfo[0], sheetMatrix.get(i), fileVariables, row, sheetInfo[1]);
+				status = goto_url(sheetInfo, sheetMatrix.get(i), fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
@@ -132,8 +143,8 @@ public class Utils extends DriverScript {
 
 			case "click":
 				status = 0;
-				status = click(sheetInfo[0], sheetMatrix.get(i), fileVariables,
-						row, sheetInfo[1]);
+				status = click(sheetInfo, sheetMatrix.get(i), fileVariables,
+						row );
 				if (status == 0) {
 					return 0;
 				}
@@ -141,8 +152,8 @@ public class Utils extends DriverScript {
 
 			case "click_wait":
 				status = 0;
-				status = click_wait(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = click_wait(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
@@ -150,8 +161,8 @@ public class Utils extends DriverScript {
 				
 			case "click_when_clickable":
 				status = 0;
-				status = click_when_clickable(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = click_when_clickable(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
@@ -159,8 +170,8 @@ public class Utils extends DriverScript {
 				
 			case "click_if_exists_button_value":
 				status = 0;
-				status = click_if_exists_button_value(sheetInfo[0],
-						sheetMatrix.get(i), fileVariables, row, sheetInfo[1]);
+				status = click_if_exists_button_value(sheetInfo,
+						sheetMatrix.get(i), fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
@@ -168,8 +179,8 @@ public class Utils extends DriverScript {
 				
 			case "click_alert_box_ok":
 				status = 0;
-				status = click_alert_box_ok(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = click_alert_box_ok(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
@@ -177,8 +188,8 @@ public class Utils extends DriverScript {
 				
 			case "click_alert_box_cancel":
 				status = 0;
-				status = click_alert_box_cancel(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = click_alert_box_cancel(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
@@ -187,8 +198,8 @@ public class Utils extends DriverScript {
 		   
 			case "enter_text":
 				status = 0;
-				status = enter_text(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = enter_text(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
@@ -197,8 +208,8 @@ public class Utils extends DriverScript {
 				
 			case "clear_text":
 				status = 0;
-				status = clear_text(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = clear_text(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
@@ -207,8 +218,8 @@ public class Utils extends DriverScript {
 				
 			case "assert_presence":
 				status = 0;
-				status = assert_presence(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = assert_presence(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
@@ -217,8 +228,8 @@ public class Utils extends DriverScript {
 				
 			case "assert_no_presence":
 				status = 0;
-				status = assert_no_presence(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = assert_no_presence(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
@@ -228,8 +239,8 @@ public class Utils extends DriverScript {
 			case "assert_text":
 
 				status = 0;
-				status = assert_text(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = assert_text(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
@@ -239,8 +250,8 @@ public class Utils extends DriverScript {
 			// not tested yet
 			case "mouse_over":
 				status = 0;
-				status = mouse_over(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = mouse_over(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
@@ -282,8 +293,8 @@ public class Utils extends DriverScript {
 				
 			case "select_from_dropdown":
 				status = 0;
-				status = select_from_dropdown(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = select_from_dropdown(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
@@ -292,8 +303,8 @@ public class Utils extends DriverScript {
 				
 			case "store_text":
 				status = 0;
-				status = store_text(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = store_text(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
@@ -303,8 +314,8 @@ public class Utils extends DriverScript {
 			// Not tested yet
 			case "store_value":
 				status = 0;
-				status = store_value(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = store_value(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
@@ -314,8 +325,8 @@ public class Utils extends DriverScript {
 			// Not tested yet
 			case "store_element_title":
 				status = 0;
-				status = store_element_title(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = store_element_title(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
@@ -324,8 +335,8 @@ public class Utils extends DriverScript {
 			
 			case "upload_file":
 				status = 0;
-				status = upload_file(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = upload_file(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				 if (status == 0) {
 					return 0;
 				}
@@ -334,16 +345,26 @@ public class Utils extends DriverScript {
 				
 			case "slider_action":
 				status = 0;
-				status = slider_action(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = slider_action(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
 				break;
+				
 			case "drag_drop":
 				status = 0;
-				status = drag_drop(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = drag_drop(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
+				if (status == 0) {
+					return 0;
+				}
+				break;
+				
+			case "switch_tab":
+				status = 0;
+				status = switch_tab(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
@@ -353,23 +374,25 @@ public class Utils extends DriverScript {
 			//Not working
 			case "assert_query":
 				status = 0;
-				status = assert_query(sheetInfo[0], sheetMatrix.get(i),
-						fileVariables, row, sheetInfo[1]);
+				status = assert_query(sheetInfo, sheetMatrix.get(i),
+						fileVariables, row);
 				if (status == 0) {
 					return 0;
 				}
 				break;
 
 			case "quit":
-				this.quit(sheetInfo[0], sheetInfo[1], 1);
+				this.quit(sheetInfo, 1);
 				break;
 			
 			default:
 				appLogs.error("Execution Failed in Row : " + row + " --> Method " + action + " in sheet " + sheetInfo[1]
 						+ " is not valid.");
-				createResultSet(sheetInfo[0], sheetInfo[1], "FAIL", "Method "+ action + " in step : " + row + " in sheet "
+				/*createResultSet(sheetInfo[0], sheetInfo[1], "FAIL", "Method "+ action + " in step : " + row + " in sheet "
+						+ sheetInfo[1] + " is not valid.", "N/A");*/
+				createResultSet(sheetInfo, "FAIL", "Method "+ action + " in step : " + row + " in sheet "
 						+ sheetInfo[1] + " is not valid.", "N/A");
-				quit(sheetInfo[0], sheetInfo[1], 0);
+				quit(sheetInfo, 0);
 				return 0;
 			} //Switch to call each utility method ends here. 
 		}
@@ -379,7 +402,8 @@ public class Utils extends DriverScript {
 		catch(Exception e){
 			//appLogs.info(parallelCounter);
 			appLogs.info("Exception Raised by Thread - " + Thread.currentThread().getName());
-			createResultSet(sheetInfo[0], sheetInfo[1], "FAIL", e.getMessage(),"N/A");
+			//createResultSet(sheetInfo[0], sheetInfo[1], "FAIL", e.getMessage(),"N/A");
+			createResultSet(sheetInfo, "FAIL", e.getMessage(),"N/A");
 			return 0;	
 			//e.getMessage().toString()
 		}
@@ -395,12 +419,12 @@ public class Utils extends DriverScript {
 	 * Launches the browser to perform the test.
 	 * @param browser - the name of the browser to be launched.
 	 */
-	public int launch_browser(String browser, String [] sheetInfo) {
+	public int launch_browser(String [] sheetInfo) {
 		//WebDriver driver = null;
 		
         try{
         	
-        	switch(browser){
+        	switch(sheetInfo[2]){
         	case "chrome":
         	case "Chrome":
     			System.setProperty("webdriver.chrome.driver",System.getProperty("user.dir")+ "//Input//Drivers//chromedriver.exe");			
@@ -425,8 +449,8 @@ public class Utils extends DriverScript {
         	
         	default :
         		appLogs.error("Execution Failed: Incorrect browser name in the config sheet in file - " + sheetInfo[0]);
-        		createResultSet(sheetInfo[0], sheetInfo[1], "FAIL","Incorrect or Empty browser name in the config sheet in file - " + sheetInfo[0]
-        				+ ". Try 'chrome', 'firefox' or 'headless' browser options.", "N/A");  
+        		createResultSet(sheetInfo, "FAIL","Incorrect or Empty browser name in the config sheet in file - " + sheetInfo[0]
+        				+ ". Try 'chrome', 'firefox' or 'headless' browser options.", "N/A"); 
         	    return 0;     	
         	
         	}
@@ -439,41 +463,114 @@ public class Utils extends DriverScript {
         }
 		catch(Exception e){
 	     appLogs.info("Exception in launching the browser by " + Thread.currentThread().getName() + e.getMessage());
+	     createResultSet(sheetInfo, "FAIL","Exception while trying to launch the browser.", "N/A"); 
 	     return 0;
 		}
 		
-
 	}
+	
+	/**
+	 * Launches the browsers in the remote machine using selenium Grid
+	 * @param SheetInfo: String array containing all the key for each executable sheet.
+	 */
+	public int launch_grid_browsers(String [] sheetInfo){
+		
+		String nodeURL = sheetInfo[3];
+		String gridBrowser = sheetInfo[4];
+		DesiredCapabilities caps = null;
+	
+	try {
+		  switch(gridBrowser){
+		  case "chrome":
+	  	  case "Chrome":
+	  	  case "CHROME":
+			  appLogs.info("Inside Chrome Browser for Grid");
+			  caps = DesiredCapabilities.chrome();
+			  caps.setBrowserName("chrome");
+			  caps.setPlatform(Platform.WINDOWS);
+			  try {
+				driver= new RemoteWebDriver(new URL(nodeURL), caps);
+			} catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			  break;
+			  
+	  	 case "firefox" :
+		 case "Firefox" :
+		 case "FIREFOX" :
+			  caps = DesiredCapabilities.firefox();
+			  caps.setBrowserName("firefox");
+			  caps.setPlatform(Platform.WINDOWS);
+			  try {
+				driver= new RemoteWebDriver(new URL(nodeURL), caps);
+			} catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			  break;
+			  
+		  case "IE11":
+			  
+			  break;
+			  
+		  case "IE10":
+			  break;
+			  
+		  case "Edge":
+			break;
+			
+		  default:
+			  appLogs.error("Execution Failed: Incorrect browser name in the Master Sheet for the Grid - " + sheetInfo[2]+ "--"  + sheetInfo[3]);
+	  		  createResultSet(sheetInfo, "FAIL","Incorrect browser name in the Master Sheet for the Grid - " + sheetInfo[2]+ "--" + sheetInfo[3]
+	  				+ ". Try 'chrome', 'firefox' or 'headless' browser options.", "N/A"); 
+	  	     return 0;    
+			  
+		  }
+		    
+		  driver.manage().window().maximize();  //maximize the browser window.	
+		  driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS); // provide implicit wait before throwing NoSuchElementException.
+		  actions = new Actions(driver);  //create object for Actions call for each driver instance 
+	    	
+		  return 1;
+	}
+	catch(Exception e){
+		createResultSet(sheetInfo, "FAIL","Exception was raised while trying to launch"+ sheetInfo[4]+ " the browser for " 
+				+sheetInfo[0] +"--" +sheetInfo[1] + "--" + sheetInfo[2]
+				+sheetInfo[3], "N/A"); 
+		return 0;
+	}
+	
+    }
 
 	/**
 	 * Navigates to a particular URL using WebDriver.get(URL) method
 	 * 
-	 * @param fileName -  Name of the currently executing file
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int goto_url(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,
-			String currentSheet) {
+	public int goto_url(String [] sheetInfo, ArrayList<String> data,HashMap<String, String> variables, String stepNumber) {
 		String dataParam = "";
 		try {
              /* check if there is any missing parameter in current row  */ 
 			if (data.get(5).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 			
-			dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
+			dataParam = getDataParam(sheetInfo, data, variables, data.get(5));
 			driver.get(dataParam);
 			return 1;
 		}
 
 		catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,
-					stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,
+					stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;
 		}
 
@@ -482,15 +579,14 @@ public class Utils extends DriverScript {
 	/**
 	 * Enters text in a field using WebDriver.sendKeys() method
 	 * 
-	 * @param fileName -  Name of the currently executing file
+     * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of SuccessfullExecution
 	 */
-	public int enter_text(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,
-			String currentSheet) {
+	public int enter_text(String [] sheetInfo, ArrayList<String> data,HashMap<String, String> variables, String stepNumber) {
 
 		String dataParam = "";    //set 'Test Data/Options' value from the list of available variables.
 		String locatorValue = ""; // set 'Locator Value' from the list of available variables.
@@ -498,13 +594,13 @@ public class Utils extends DriverScript {
 		try {
 			/* check if there is any missing parameter in current row  */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
 			Thread.sleep(1000);
-			dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
-			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			dataParam = getDataParam(sheetInfo, data, variables, data.get(5));
+			locatorValue = getDataParam(sheetInfo, data, variables, data.get(4));
 
 			switch (data.get(3)) { // switch starts here.
 
@@ -527,7 +623,7 @@ public class Utils extends DriverScript {
 			// add more case statements here.
 
 			default:
-				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				incorrectLocatorType(sheetInfo, data, stepNumber);
 				return 0;
 			}// switch ends here
 
@@ -536,9 +632,9 @@ public class Utils extends DriverScript {
 		}
 
 		catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,
-					stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,
+					stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;
 		}
 	}
@@ -547,15 +643,14 @@ public class Utils extends DriverScript {
 	/**
 	 * Clears the user input from a web element using WebDriver.clear() method.
 	 * 
-	 * @param fileName -  Name of the currently executing file
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int clear_text(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,
-			String currentSheet) {
+	public int clear_text(String [] sheetInfo, ArrayList<String> data,HashMap<String, String> variables, String stepNumber) {
 		
 		String locatorValue = "";
 		
@@ -563,11 +658,11 @@ public class Utils extends DriverScript {
 			
 			/* check if there is any missing parameter in current row  */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
-			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			locatorValue = getDataParam(sheetInfo, data, variables, data.get(4));
 			Thread.sleep(1000);
 			switch (data.get(3)) { // switch starts here.
 
@@ -591,7 +686,7 @@ public class Utils extends DriverScript {
 			// add more case statements here.
 
 			default:
-				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				incorrectLocatorType(sheetInfo, data, stepNumber);
 				return 0;
 			}// switch ends here
 
@@ -600,8 +695,8 @@ public class Utils extends DriverScript {
 		}
 
 		catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,	stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,	stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;
 		}
 	}
@@ -609,15 +704,14 @@ public class Utils extends DriverScript {
 	/**
 	 * Clicks on a particular element using WebDriver.click() method.
 	 * 
-	 * @param fileName -  Name of the currently executing file
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int click(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,
-			String currentSheet) {
+	public int click(String [] sheetInfo, ArrayList<String> data,HashMap<String, String> variables, String stepNumber) {
 
 		String locatorValue = "";
 		
@@ -625,11 +719,11 @@ public class Utils extends DriverScript {
 			
 			/* check if required parameters for this action are missing or not */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
-			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			locatorValue = getDataParam(sheetInfo, data, variables, data.get(4));
 			Thread.sleep(1000);
 			switch (data.get(3)) { // switch starts here.
 
@@ -669,16 +763,16 @@ public class Utils extends DriverScript {
 			// add more case statements here.
 
 			default:
-				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				incorrectLocatorType(sheetInfo, data, stepNumber);
 				return 0;
 			}// switch ends here
 
 			return 1;
 			
 		} catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,
-					stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,
+					stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;
 		}
 
@@ -687,26 +781,25 @@ public class Utils extends DriverScript {
 	/**
 	 * Clicks on an element using its value attribute, only if that element is present on the page.
 	 * 
-	 * @param fileName -  Name of the currently executing file
+     * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int click_if_exists_button_value(String fileName,ArrayList<String> data, HashMap<String, String> variables,String stepNumber,
-			String currentSheet) {
+	public int click_if_exists_button_value(String [] sheetInfo,ArrayList<String> data, HashMap<String, String> variables,String stepNumber) {
 
 		String locatorValue = "";
 		try {
 
 			/* check if required parameters for this action are missing or not */ 
 			if (data.get(4).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
-			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			locatorValue = getDataParam(sheetInfo, data, variables, data.get(4));
 			
 			//Check if the element based on the provided value attribute is present or not. Click if present.
 			if (!driver.findElements(
@@ -723,9 +816,9 @@ public class Utils extends DriverScript {
 		}
 
 		catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,
-					stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,
+					stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;
 		}
 	}
@@ -733,16 +826,15 @@ public class Utils extends DriverScript {
 	/**
 	 * Wait a particular element to appear on the page then click it. 
 	 * 
-	 * @param fileName -  Name of the currently executing file
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config sheet and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
 
-	public int click_wait(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber,
-			String currentSheet) {
+	public int click_wait(String [] sheetInfo, ArrayList<String> data, HashMap<String, String> variables, String stepNumber) {
 		
 		wait = new WebDriverWait(driver, 30);  //Creating a new WebDriverWait and passing the WebDriver and TimeOut
 		String locatorValue = " ";
@@ -751,11 +843,11 @@ public class Utils extends DriverScript {
 			
 			/* check if required parameters for this action are missing or not */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
-			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			locatorValue = getDataParam(sheetInfo, data, variables, data.get(4));
 
 			switch (data.get(3)) { // switch starts here.
 
@@ -802,7 +894,7 @@ public class Utils extends DriverScript {
 			// add more case statements here.
 
 			default:
-				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				incorrectLocatorType(sheetInfo, data, stepNumber);
 				return 0;
 			}// switch ends here
 
@@ -810,9 +902,9 @@ public class Utils extends DriverScript {
 		}
 
 		catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,
-					stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,
+					stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;
 		}
 	}
@@ -820,7 +912,8 @@ public class Utils extends DriverScript {
 	/**
 	 * Click on a particular web element only when its clickable.
 	 * 
-	 * @param fileName -  Name of the currently executing file
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config sheet and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
@@ -828,8 +921,7 @@ public class Utils extends DriverScript {
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
 	
-	public int click_when_clickable(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber,
-			String currentSheet){
+	public int click_when_clickable(String[] sheetInfo, ArrayList<String> data, HashMap<String, String> variables, String stepNumber){
 		
 		wait = new WebDriverWait(driver, 20);  //Creating a new WebDriverWait and passing the WebDriver and TimeOut
 	
@@ -839,11 +931,11 @@ public class Utils extends DriverScript {
 			
 			/* check if required parameters for this action are missing or not */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
-			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			locatorValue = getDataParam(sheetInfo, data, variables, data.get(4));
 			Thread.sleep(1000);
 			switch (data.get(3)) { // switch starts here.
 
@@ -891,16 +983,16 @@ public class Utils extends DriverScript {
 			// add more case statements here.
 
 			default:
-				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				incorrectLocatorType(sheetInfo, data, stepNumber);
 				return 0;
 			}// switch ends here
 
 			return 1;
 			
 		} catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,
-					stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,
+					stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;
 		}
 				
@@ -908,16 +1000,14 @@ public class Utils extends DriverScript {
 
 	/**
 	 * Assert that a particular element is displayed on the page based on its text value.
-	 * 
-	 * @param fileName -  Name of the currently executing file
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config sheet and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int assert_text(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber,
-			String currentSheet) {
+	public int assert_text(String [] sheetInfo, ArrayList<String> data, HashMap<String, String> variables, String stepNumber) {
 
 		String actualValue = "";
 		String dataParam = "";
@@ -928,12 +1018,12 @@ public class Utils extends DriverScript {
 			/* check if required parameters for this action are missing or not */ 
 			
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
-			locatorValue =getDataParam(fileName, currentSheet, data, variables, data.get(4));
-			dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
+			locatorValue =getDataParam(sheetInfo, data, variables, data.get(4));
+			dataParam = getDataParam(sheetInfo, data, variables, data.get(5));
 
 			switch (data.get(3)) { // switch starts here.
 
@@ -972,16 +1062,16 @@ public class Utils extends DriverScript {
 			// add more case statements here.
 
 			default:
-				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				incorrectLocatorType(sheetInfo, data, stepNumber);
 				return 0;
 			}// switch ends here
 
 			if (!(actualValue.equals(dataParam))) {
 				appLogs.error("Execution Failed: Actual text on platform does not match with Argument Provided for Action "
-						+ data.get(2)+ " in Step number "+ stepNumber+ " of Sheet " + currentSheet);
+						+ data.get(2)+ " in Step number "+ stepNumber+ " of Sheet " + sheetInfo[1]);
 				appLogs.info("Actual Value :" + actualValue + "-----" + " Exceted Value : " + dataParam);
 
-				getScreenshot(fileName, currentSheet, stepNumber,"Execution Failed at Step " + stepNumber+ " due to data mismatch - "
+				getScreenshot(sheetInfo, stepNumber,"Execution Failed at Step " + stepNumber+ " due to data mismatch - "
 								+ " Actual Value :" + actualValue + " ----- "+ " Expected Value : " + dataParam);
 				return 0;
 
@@ -990,8 +1080,8 @@ public class Utils extends DriverScript {
 		}
 
 		catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;
 		}
 	}
@@ -999,26 +1089,25 @@ public class Utils extends DriverScript {
 	/**
 	 * assert the presence of an element on the page based on its locator value.
 	 * 
-	 * @param fileName -  Name of the currently executing file
+     * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config sheet and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int assert_presence(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber,
-			String currentSheet) {
+	public int assert_presence(String [] sheetInfo, ArrayList<String> data, HashMap<String, String> variables, String stepNumber) {
 		
 		String locatorValue = "";
 		
 		try {
 			/* check if required parameters for this action are missing or not */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
-			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			locatorValue = getDataParam(sheetInfo, data, variables, data.get(4));
 
 			switch (data.get(3)) { // switch starts here.
 
@@ -1057,7 +1146,7 @@ public class Utils extends DriverScript {
 			// add more case statements here.
 
 			default:
-				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				incorrectLocatorType(sheetInfo, data, stepNumber);
 				return 0;
 			}// switch ends here
 
@@ -1065,9 +1154,9 @@ public class Utils extends DriverScript {
 		}
 
 		catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,
-					stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,
+					stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;
 		}
 	}
@@ -1075,16 +1164,15 @@ public class Utils extends DriverScript {
 	/**
 	 * Assert that an element is not present on the page based on its locator value 
 	 * 
-	 * @param fileName -  Name of the currently executing file
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config sheet and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
 
-	public int assert_no_presence(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,
-			String currentSheet) {
+	public int assert_no_presence(String[] sheetInfo, ArrayList<String> data,HashMap<String, String> variables, String stepNumber) {
 		
 		String locatorValue = "";
 		List numberOfElements = new ArrayList();
@@ -1092,11 +1180,11 @@ public class Utils extends DriverScript {
 		try {
 			/* check if required parameters for this action are missing or not */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
-			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			locatorValue = getDataParam(sheetInfo, data, variables, data.get(4));
 			
 			switch (data.get(3)) { // switch starts here.
 
@@ -1135,7 +1223,7 @@ public class Utils extends DriverScript {
 			// add more case statements here.
 
 			default:
-				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				incorrectLocatorType(sheetInfo, data, stepNumber);
 				return 0;
 			}// switch ends here
 
@@ -1143,9 +1231,9 @@ public class Utils extends DriverScript {
 
 				appLogs.error("Execution Failed :  For Action " + data.get(2)
 						+ " in Step number " + stepNumber + " of Sheet "
-						+ currentSheet);
-				getScreenshot(fileName, currentSheet, stepNumber, "Assertion Failed :  For Action " + data.get(2)
-						+ " in Step number " + stepNumber + " of Sheet " + currentSheet );
+						+ sheetInfo[1]);
+				getScreenshot(sheetInfo, stepNumber, "Assertion Failed :  For Action " + data.get(2)
+						+ " in Step number " + stepNumber + " of Sheet " + sheetInfo[1] );
 				return 0;
 			} 
 			
@@ -1155,8 +1243,8 @@ public class Utils extends DriverScript {
 		}
 
 		catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;
 		}
 	}
@@ -1164,15 +1252,14 @@ public class Utils extends DriverScript {
 	/**
 	 * Verify the browser alert box on the page and click on 'OK' button. 
 	 * 
-	 * @param fileName -  Name of the currently executing file
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config sheet and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int click_alert_box_ok(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber,
-			String currentSheet) {
+	public int click_alert_box_ok(String[] sheetInfo, ArrayList<String> data, HashMap<String, String> variables, String stepNumber) {
 
 		Alert alert = driver.switchTo().alert();
 
@@ -1182,19 +1269,19 @@ public class Utils extends DriverScript {
 		try {
 			/* check if required parameters for this action are missing or not */ 
 			if (data.get(5).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
-			dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
+			dataParam = getDataParam(sheetInfo, data, variables, data.get(5));
 
 			/*Assert the text in the Alert pop up */
 			if (!(alert.getText().equals(dataParam))) {
 				appLogs.error("Execution Failed: Alert Text does not match with Argument Provided for Action "
-						+ data.get(2)+ " in Step number "+ stepNumber+ " of Sheet " + currentSheet);
+						+ data.get(2)+ " in Step number "+ stepNumber+ " of Sheet " + sheetInfo[1]);
 				appLogs.info("Actual Value :" + alert.getText() + "-----"+ " Exceted Value : " + dataParam);
 
-				getScreenshot(fileName, currentSheet, stepNumber,"Execution Failed at Step " + stepNumber
+				getScreenshot(sheetInfo, stepNumber,"Execution Failed at Step " + stepNumber
 								+ " due to in correct alert pop up message - "+ " Actual Value :" + alert.getText()
 								+ " ----- " + " Expected Value : " + dataParam);
 				return 0;
@@ -1207,8 +1294,8 @@ public class Utils extends DriverScript {
 		} 
 		
 		catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;
 		}
 	}
@@ -1216,15 +1303,14 @@ public class Utils extends DriverScript {
 	/**
 	 * Verify the browser alert box on the page and click on 'OK' button. 
 	 * 
-	 * @param fileName -  Name of the currently executing file
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config sheet and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int click_alert_box_cancel(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber,
-			String currentSheet) {
+	public int click_alert_box_cancel(String [] sheetInfo, ArrayList<String> data, HashMap<String, String> variables, String stepNumber) {
 
 		Alert alert = driver.switchTo().alert();
 
@@ -1234,19 +1320,19 @@ public class Utils extends DriverScript {
 		try {
 			/* check if required parameters for this action are missing or not */ 
 			if (data.get(5).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
-			dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
+			dataParam = getDataParam(sheetInfo, data, variables, data.get(5));
 
 			/*Assert the text in the Alert pop up */
 			if (!(alert.getText().equals(dataParam))) {
 				appLogs.error("Execution Failed: Alert Text does not match with Argument Provided for Action "
-						+ data.get(2)+ " in Step number "+ stepNumber+ " of Sheet " + currentSheet);
+						+ data.get(2)+ " in Step number "+ stepNumber+ " of Sheet " + sheetInfo[1]);
 				appLogs.info("Actual Value :" + alert.getText() + "-----"+ " Exceted Value : " + dataParam);
 
-				getScreenshot(fileName, currentSheet, stepNumber,"Execution Failed at Step " + stepNumber
+				getScreenshot(sheetInfo, stepNumber,"Execution Failed at Step " + stepNumber
 								+ " due to in correct alert pop up message - "+ " Actual Value :" + alert.getText()
 								+ " ----- " + " Expected Value : " + dataParam);
 				return 0;
@@ -1257,8 +1343,8 @@ public class Utils extends DriverScript {
 			return 1;
 
 		} catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;
 		}
 	}
@@ -1268,27 +1354,26 @@ public class Utils extends DriverScript {
 	 * Select a element from the drop down (to be used only with the web elements that have 
 	 *  'Select' tag)
 	 *  
-	 * @param fileName -  Name of the currently executing file
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config sheet and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int select_from_dropdown(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,
-			String currentSheet) {
+	public int select_from_dropdown(String [] sheetInfo, ArrayList<String> data,HashMap<String, String> variables, String stepNumber) {
 
 		String dataParam = "";
 		String locatorValue = "";
 		try {
 			/* check if required parameters for this action are missing or not */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 			
-			dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
-			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			dataParam = getDataParam(sheetInfo, data, variables, data.get(5));
+			locatorValue = getDataParam(sheetInfo, data, variables, data.get(4));
 
 			switch (data.get(3)) { // switch starts here.
 
@@ -1307,7 +1392,7 @@ public class Utils extends DriverScript {
 			// add more case statements here.
 
 			default:
-				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				incorrectLocatorType(sheetInfo, data, stepNumber);
 				return 0;
 			}// switch ends here
 
@@ -1315,8 +1400,8 @@ public class Utils extends DriverScript {
 		} 
 		
 		catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;
 		}
 	}
@@ -1324,24 +1409,24 @@ public class Utils extends DriverScript {
 	/**
 	 * Hover the mouse over a web element.
 	 * 
-	 * @param fileName -  Name of the currently executing file
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config sheet and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int mouse_over(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber, String currentSheet) {
+	public int mouse_over(String[] sheetInfo, ArrayList<String> data,HashMap<String, String> variables, String stepNumber) {
 		
 		String locatorValue = "";
 		
 		try {
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
-			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			locatorValue = getDataParam(sheetInfo, data, variables, data.get(4));
 			switch (data.get(3)) { // switch starts here.
 
 			case "xpath":
@@ -1359,15 +1444,15 @@ public class Utils extends DriverScript {
 			// add more case statements here.
 
 			default:
-				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				incorrectLocatorType(sheetInfo, data, stepNumber);
 				return 0;
 			}// switch ends here
 
 			return 1;
 
 		} catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,stepNumber, e);
+			getScreenshot(sheetInfo,  stepNumber, exceptionMessage);
 			return 0;
 		}
 	}
@@ -1376,14 +1461,14 @@ public class Utils extends DriverScript {
 	/**
 	 * Store the text of an element in a variable and add this variable to 'variables' hashmap for further usage.
 	 * 
-	 * @param fileName -  Name of the currently executing file
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config sheet and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int store_text(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,String currentSheet) {
+	public int store_text(String[] sheetInfo, ArrayList<String> data,HashMap<String, String> variables, String stepNumber) {
 		
 		String key = null;
 		String value = null;
@@ -1393,17 +1478,17 @@ public class Utils extends DriverScript {
 			
 			/* check if required parameters for this action are missing or not */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
-			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			locatorValue = getDataParam(sheetInfo, data, variables, data.get(4));
 			
 			if(data.get(5).toString().substring(0, 5).equals("var <")){
 				key = data.get(5).toString().substring(3).trim();
 			}
 			else{
-				incorrectVariableDeclaration(fileName, data, stepNumber, currentSheet);
+				incorrectVariableDeclaration(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
@@ -1445,7 +1530,7 @@ public class Utils extends DriverScript {
 			// add more case statements here.
 
 			default:
-				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				incorrectLocatorType(sheetInfo, data, stepNumber);
 				return 0;
 			}// switch ends here
 
@@ -1455,8 +1540,8 @@ public class Utils extends DriverScript {
 		}
 
 		catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;
 		}
 	}
@@ -1465,14 +1550,14 @@ public class Utils extends DriverScript {
 	/**
 	 * Store the value of an element in a variable and add it to the 'Variables' hashmap for further usage.
 	 * 
-	 * @param fileName -  Name of the currently executing file
-	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
+     * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config sheet and during run time) for the file
-	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
+	 * @param stepNumber - Currently executing Row in the sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int store_value(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,String currentSheet) {
+	public int store_value(String[] sheetInfo, ArrayList<String> data,HashMap<String, String> variables, String stepNumber) {
 		
 		String key = null;
 		String value = null;
@@ -1482,16 +1567,16 @@ public class Utils extends DriverScript {
             
 			/* check if required parameters for this action are missing or not */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
-			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			locatorValue = getDataParam(sheetInfo, data, variables, data.get(4));
 			if(data.get(5).toString().substring(0, 5).equals("var <")){
 				key = data.get(5).toString().substring(3).trim();
 			}
 			else{
-				incorrectVariableDeclaration(fileName, data, stepNumber, currentSheet);
+				incorrectVariableDeclaration(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
@@ -1532,7 +1617,7 @@ public class Utils extends DriverScript {
 			// add more case statements here.
 
 			default:
-				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				incorrectLocatorType(sheetInfo, data, stepNumber);
 				return 0;
 			}// switch ends here
 
@@ -1542,8 +1627,8 @@ public class Utils extends DriverScript {
 		}
 
 		catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data, stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;
 		}
 	}
@@ -1552,15 +1637,14 @@ public class Utils extends DriverScript {
 	/**
 	 * Store the title attribute of a web Element in a variable and store this in 'Variables'  hashMap for further usage
 	 * 
-	 * @param fileName -  Name of the currently executing file
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config sheet and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int store_element_title(String fileName, ArrayList<String> data, HashMap<String, String> variables, String stepNumber
-			,String currentSheet) {
+	public int store_element_title(String[] sheetInfo, ArrayList<String> data, HashMap<String, String> variables, String stepNumber) {
 	
 		String key = null;
 		String value = null;
@@ -1570,16 +1654,16 @@ public class Utils extends DriverScript {
  
 			/* check if required parameters for this action are missing or not */ 
 			if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
-			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+			locatorValue = getDataParam(sheetInfo, data, variables, data.get(4));
 			if(data.get(5).toString().substring(0, 5).equals("var <")){
 				key = data.get(5).toString().substring(3).trim();
 			}
 			else{
-				incorrectVariableDeclaration(fileName, data, stepNumber, currentSheet);
+				incorrectVariableDeclaration(sheetInfo, data, stepNumber);
 				return 0;
 			}
 			
@@ -1621,7 +1705,7 @@ public class Utils extends DriverScript {
 			// add more case statements here.
 
 			default:
-				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				incorrectLocatorType(sheetInfo, data, stepNumber);
 				return 0;
 			}// switch ends here
 
@@ -1631,8 +1715,8 @@ public class Utils extends DriverScript {
 		}
 
 		catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;
 		}
 	}
@@ -1640,29 +1724,29 @@ public class Utils extends DriverScript {
 	/**
 	 * Upload a file 
 	 * 
-	 * @param fileName -  Name of the currently executing file
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
+
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config sheet and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
 
-	public int upload_file(String fileName, ArrayList<String> data,	HashMap<String, String> variables, String stepNumber,
-			String currentSheet) {
+	public int upload_file(String[] sheetInfo, ArrayList<String> data,	HashMap<String, String> variables, String stepNumber) {
 
 		String dataParam = "";
 		String locatorValue = " ";
 		
 		/* check if required parameters for this action are missing or not */ 
 		if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
-			missingArgs(fileName, data, stepNumber, currentSheet);
+			missingArgs(sheetInfo, data, stepNumber);
 			return 0;
 			
 		}
 
-		dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
-		locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
+		dataParam = getDataParam(sheetInfo, data, variables, data.get(5));
+		locatorValue = getDataParam(sheetInfo, data, variables, data.get(4));
 		JavascriptExecutor js = (JavascriptExecutor) driver;
 		
 		try{
@@ -1692,7 +1776,7 @@ public class Utils extends DriverScript {
 			// add more case statements here.
 
 			default:
-				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				incorrectLocatorType(sheetInfo, data, stepNumber);
 				return 0;
 				
 			}// switch ends here
@@ -1701,8 +1785,8 @@ public class Utils extends DriverScript {
 			
 		}
 		catch(Exception e){
-			String exceptionMessage = exceptionalCondition(fileName, data,stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;				
 		}
 		
@@ -1712,16 +1796,16 @@ public class Utils extends DriverScript {
 	/**
 	 * Perform Slider action.
 	 * 
-	 * @param fileName -  Name of the currently executing file
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
+
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config sheet and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
 	
-	public int slider_action(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,
-			String currentSheet){
+	public int slider_action(String [] sheetInfo, ArrayList<String> data,HashMap<String, String> variables, String stepNumber){
 		
 		WebElement toSlide = null; //WebElement that is to be slided.
 		String xoffset = ""; //horizontal offset value 
@@ -1730,26 +1814,26 @@ public class Utils extends DriverScript {
 		
 		/* check if required parameters for this action are missing or not */ 
 		if (data.get(3).equals("N/A") || data.get(4).equals("N/A")|| data.get(5).equals("N/A")) {
-			missingArgs(fileName, data, stepNumber, currentSheet);
+			missingArgs(sheetInfo, data, stepNumber);
 			return 0;
 			
 		}
 		
 		if(data.get(5).split(",").length!=2){
 			appLogs.error("Execution Failed: Missing Arugments for the Action " + data.get(2) 
-				    + " in Step number " + stepNumber + " of Sheet "+ currentSheet);
+				    + " in Step number " + stepNumber + " of Sheet "+ sheetInfo[1]);
 		
-		   createResultSet(fileName, currentSheet, "FAIL","Incorrect offset Format provided for the action " + data.get(2)
-						+ " in Step number " + stepNumber + " of Sheet "+ currentSheet, "N/A");
+		   createResultSet(sheetInfo, "FAIL","Incorrect offset Format provided for the action " + data.get(2)
+						+ " in Step number " + stepNumber + " of Sheet "+ sheetInfo[1], "N/A");
 		
-		   quit(fileName, currentSheet, 0); //Quit the browser due to Execution Failure
+		   quit(sheetInfo, 0); //Quit the browser due to Execution Failure
 		   
 		   return 0;
 		}
 		
-		locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
-		xoffset= getDataParam(fileName, currentSheet, data, variables, data.get(5).split(",")[0].trim());
-		yoffset= getDataParam(fileName, currentSheet, data, variables, data.get(5).split(",")[1].trim());
+		locatorValue = getDataParam(sheetInfo, data, variables, data.get(4));
+		xoffset= getDataParam(sheetInfo, data, variables, data.get(5).split(",")[0].trim());
+		yoffset= getDataParam(sheetInfo, data, variables, data.get(5).split(",")[1].trim());
 		
 		try{
 			
@@ -1791,7 +1875,7 @@ public class Utils extends DriverScript {
 		// add more case statements here.
 
 		default:
-			incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+			incorrectLocatorType(sheetInfo, data, stepNumber);
 			return 0;
 		}// switch ends here
 		
@@ -1803,8 +1887,8 @@ public class Utils extends DriverScript {
 		
 		}
 		catch(Exception e){
-			String exceptionMessage = exceptionalCondition(fileName, data,stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;		
 		}
 	}
@@ -1813,17 +1897,17 @@ public class Utils extends DriverScript {
 	/**
 	 * Drags one element on to another.
 	 * 
-	 * @param fileName -  Name of the currently executing file
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
+
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config sheet and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
 	
 	
-	public int drag_drop(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,
-			String currentSheet){
+	public int drag_drop(String [] sheetInfo, ArrayList<String> data,HashMap<String, String> variables, String stepNumber){
 		
 		WebElement source = null;   //WebElement that is to be dragged.
 		WebElement target = null; //WebElement that is to dragged on to.
@@ -1835,7 +1919,7 @@ public class Utils extends DriverScript {
 		/* check if required parameters for this action are missing or not */ 
 		if (data.get(3).equals("N/A") || data.get(3).split(";;").length!=2 || 
 				data.get(4).equals("N/A") || data.get(4).split(";;").length!=2) {
-			missingArgs(fileName, data, stepNumber, currentSheet);
+			missingArgs(sheetInfo, data, stepNumber);
 			return 0;
 			
 		}
@@ -1845,8 +1929,8 @@ public class Utils extends DriverScript {
 		targetLocatorType = data.get(3).split(";;")[1];
 		
 		/*Get the Locator Value for both the elements */
-		sourceLocatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4).split(";;")[0]);
-		targetLocatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4).split(";;")[1]);
+		sourceLocatorValue = getDataParam(sheetInfo, data, variables, data.get(4).split(";;")[0]);
+		targetLocatorValue = getDataParam(sheetInfo, data, variables, data.get(4).split(";;")[1]);
 		
       try{
 			
@@ -1888,7 +1972,7 @@ public class Utils extends DriverScript {
 			// add more case statements here.
 
 			default:
-				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				incorrectLocatorType(sheetInfo, data, stepNumber);
 				return 0;
 				
 			}// switch ends here
@@ -1932,7 +2016,7 @@ public class Utils extends DriverScript {
 			// add more case statements here.
 
 			default:
-				incorrectLocatorType(fileName, data, stepNumber, currentSheet);
+				incorrectLocatorType(sheetInfo, data, stepNumber);
 				return 0;
 				
 			}// switch ends here
@@ -1954,25 +2038,59 @@ public class Utils extends DriverScript {
 			
 		}
 		catch(Exception e){
-			String exceptionMessage = exceptionalCondition(fileName, data,stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;				
 		}		
 		
+	}
+	
+	
+
+	/**
+	 * Use to switch to a tab which does not have the focus.
+	 * 
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
+	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
+	 * @param variables - All the variables (specified in config sheet and during run time) for the file
+	 * @param stepNumber - Currently executing Row in the sheet.
+	 * @return 0 in case of Failure and 1 in case of Successfully Execution
+	 */
+	
+	public int switch_tab(String [] sheetInfo, ArrayList<String> data,HashMap<String, String> variables, String stepNumber){
+		
+	 try{
+		 String parentHandle = driver.getWindowHandle(); //get the Handle of the currently focused tab.
+			Set<String>handles = driver.getWindowHandles();
+			
+			for(String handle : handles){
+				if(!handle.equalsIgnoreCase(parentHandle)){
+					driver.switchTo().window(handle);
+				}
+			}
+			
+			return 1;
+	 }
+	 catch(Exception e){
+		 String exceptionMessage = exceptionalCondition(sheetInfo, data,stepNumber, e);
+		 getScreenshot(sheetInfo, stepNumber, exceptionMessage);
+		 return 0;	
+	 }	
 	}
 	
 
 	/**
 	 * 
 	 * 
-	 * @param fileName -  Name of the currently executing file
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - ArrayList of all the relevant cell data in the currently executing Row.
 	 * @param variables - All the variables (specified in config sheet and during run time) for the file
 	 * @param stepNumber - Currently executing Row in the sheet.
-	 * @param currentSheet - Name of the current executing Sheet
 	 * @return 0 in case of Failure and 1 in case of Successfully Execution
 	 */
-	public int assert_query(String fileName, ArrayList<String> data,HashMap<String, String> variables, String stepNumber,String currentSheet) {
+	public int assert_query(String [] sheetInfo, ArrayList<String> data,HashMap<String, String> variables, String stepNumber) {
 
 		String URL = "jdbc:mysql://mysql-proxy.brightedge.com:13700/optiweber2";
 		String userName = "readyonly";
@@ -1984,12 +2102,12 @@ public class Utils extends DriverScript {
 		try {
 			/* check if required parameters for this action are missing or not */ 
 			if (data.get(4).equals("N/A") || data.get(5).equals("N/A")) {
-				missingArgs(fileName, data, stepNumber, currentSheet);
+				missingArgs(sheetInfo, data, stepNumber);
 				return 0;
 			}
 
-			locatorValue = getDataParam(fileName, currentSheet, data, variables, data.get(4));
-			dataParam = getDataParam(fileName, currentSheet, data, variables, data.get(5));
+			locatorValue = getDataParam(sheetInfo, data, variables, data.get(4));
+			dataParam = getDataParam(sheetInfo, data, variables, data.get(5));
 			
 			query = data.get(4).toString();
 			appLogs.info("Executing query -  " + query);
@@ -2008,7 +2126,7 @@ public class Utils extends DriverScript {
 				if (!(resultSet.getString(1).equals(dataParam))) {
 					appLogs.error("Execution Failed: " + dataParam
 							+ " is not present in the data base in "
-							+ stepNumber + " of Sheet " + currentSheet);
+							+ stepNumber + " of Sheet " + sheetInfo[1]);
 					// main.resultDataRow.add("Execution Failed at Step " +
 					// stepNumber + " due to missing arguments.");
 					// main.resultDataRow.add("N/A");
@@ -2027,16 +2145,16 @@ public class Utils extends DriverScript {
 		catch (SQLException e) {
 			appLogs.error("Execution Failed :  For Action " + data.get(2)
 					+ " in Step number " + stepNumber + " of Sheet "
-					+ currentSheet);
+					+ sheetInfo[1]);
 			appLogs.error(e.getMessage());
-			getScreenshot(fileName, currentSheet, stepNumber, e.getMessage()
+			getScreenshot(sheetInfo, stepNumber, e.getMessage()
 					.substring(0, 50) + "...");
 
 			return 0;
 		} catch (Exception e) {
-			String exceptionMessage = exceptionalCondition(fileName, data,
-					stepNumber, currentSheet, e);
-			getScreenshot(fileName, currentSheet, stepNumber, exceptionMessage);
+			String exceptionMessage = exceptionalCondition(sheetInfo, data,
+					stepNumber, e);
+			getScreenshot(sheetInfo, stepNumber, exceptionMessage);
 			return 0;
 		}
 
@@ -2046,19 +2164,20 @@ public class Utils extends DriverScript {
 	/**
 	 * Quits the browser 
 	 * 
-	 * @param fileName - Name of currently Executing File
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param stepNumber - Currently executing row number 
-	 * @param sheetName - Currently Executing Sheet
 	 * @param status - Status of the currently executing sheet for which quit is called.(0-FAIL , 1- PASS)
 	 * @return - N/A
 	 */
-	public void quit(String fileName, String sheetName, int status) {
+	public void quit(String [] sheetInfo, int status) {
 
 		if (status == 1) {
-			appLogs.info("< ------ Successfully Completed the execution for sheet : "+ sheetName + " in File : " + fileName + "------ >");
-			createResultSet(fileName, sheetName, "PASS", "N/A", "N/A");
+			appLogs.info("< ------ Successfully Completed the execution for sheet : "+ sheetInfo[1] + " in File : " + sheetInfo[0] + "------ >");
+			//createResultSet(sheetInfo[0], sheetName, "PASS", "N/A", "N/A");
+			createResultSet(sheetInfo, "PASS", "N/A", "N/A");
 		} else
-			appLogs.error("< ------ Executon failed for sheet :" + sheetName + " ------ >");
+			appLogs.error("< ------ Executon failed for sheet :" + sheetInfo[1] + " ------ >");
 
 		driver.close();
 		//driver.quit();
@@ -2078,10 +2197,10 @@ public class Utils extends DriverScript {
 	 * @param data - contains the String provided in 'Locator Value' or 'Test Data/Options' column of a row.
 	 * @return - Returns the updated string value
 	 */	
-	public String getDataParam(String fileName, String currentSheet, ArrayList<String> data,
+	public String getDataParam(String[] sheetInfo, ArrayList<String> data,
 			HashMap<String, String> variables, String param) {
 		
-		String commonSheetKey = fileName+":"+currentSheet+":"+data.get(0)+":"+data.get(7);
+		String commonSheetKey = sheetInfo[0]+":"+sheetInfo[1]+":"+data.get(0)+":"+data.get(7);
 		appLogs.debug("Common Sheet keys is " + commonSheetKey);
 		
 
@@ -2115,81 +2234,81 @@ public class Utils extends DriverScript {
 	/**
 	 * Adds error message, updates final Result Set in case of any missing arguments in a row.
 	 * 
-	 * @param fileName - Name of currently Executing File
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - Cell data from the currently executing row 
 	 * @param stepNumber - Currently executing row number 
-	 * @param currentSheet - Currently Executing Sheet
 	 */	
-	public void missingArgs(String fileName, ArrayList data, String stepNumber,String currentSheet) {
+	public void missingArgs(String[] sheetInfo, ArrayList data, String stepNumber) {
 		appLogs.debug("Inside the missingArgs Method");
 		
 		appLogs.error("Execution Failed: Missing Arugments for the Action " + data.get(2) 
-				    + " in Step number " + stepNumber + " of Sheet "+ currentSheet);
+				    + " in Step number " + stepNumber + " of Sheet "+ sheetInfo[1]);
 		
-		createResultSet(fileName, currentSheet, "FAIL","Missing Arugments for the Action " + data.get(2)
-						+ " in Step number " + stepNumber + " of Sheet "+ currentSheet, "N/A");
+		createResultSet(sheetInfo, "FAIL","Missing Arugments for the Action " + data.get(2)
+						+ " in Step number " + stepNumber + " of Sheet "+ sheetInfo[1], "N/A");
 		
-		quit(fileName, currentSheet, 0); //Quit the browser due to Execution Failure
+		quit(sheetInfo, 0); //Quit the browser due to Execution Failure
 	}
 	
 	
 	/**
 	 * Adds error message, updates final Result Set in case of any incorrect Locator Type in a row.
 	 * 
-	 * @param fileName - Name of currently Executing File
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - Cell data from the currently executing row 
 	 * @param stepNumber - Currently executing row number 
-	 * @param currentSheet - Currently Executing Sheet
 	 */	
-	public void incorrectLocatorType(String fileName, ArrayList data, String stepNumber,String currentSheet){
+	public void incorrectLocatorType(String[] sheetInfo, ArrayList data, String stepNumber){
 		appLogs.debug("Inside the incorrectLocatorType Method");
 		
 		appLogs.error("Execution Failed: Incorrect Locator Type for the Action "+ data.get(2) 
-				    + " in Step number " + stepNumber + " of Sheet "+ currentSheet);
+				    + " in Step number " + stepNumber + " of Sheet "+ sheetInfo[1]);
 		
-		createResultSet(fileName, currentSheet, "FAIL","Incorrect Locator Type for the Action " + data.get(2)
-						+ " in Step number " + stepNumber + " of Sheet "+ currentSheet, "N/A");
+		createResultSet(sheetInfo, "FAIL","Incorrect Locator Type for the Action " + data.get(2)
+						+ " in Step number " + stepNumber + " of Sheet "+ sheetInfo[1], "N/A");
 		
-		quit(fileName, currentSheet, 0);  //Quit the browser due to Execution Failure
+		quit(sheetInfo, 0);  //Quit the browser due to Execution Failure
 		
 	}
 
 	/**
 	 * Adds error message, updates final Result Set in case of incorrect variable declaration in the 
 	 * Test Data/Options Column
-	 * 
-	 * @param fileName - Name of currently Executing File
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - Cell data from the currently executing row 
 	 * @param stepNumber - Currently executing row number 
 	 * @param currentSheet - Currently Executing Sheet
 	 */	
-	public void incorrectVariableDeclaration(String fileName, ArrayList data, String stepNumber,String currentSheet){
+	public void incorrectVariableDeclaration(String [] sheetInfo, ArrayList data, String stepNumber){
 		
         appLogs.debug("Inside the incorrectVariableAssgnment Method");
 		
 		appLogs.error("Execution Failed: Incorrect Variable Declaration for the Action "+ data.get(2) 
-				    + " in Step number " + stepNumber + " of Sheet "+ currentSheet  + "USE format -  var <variable name>");
+				    + " in Step number " + stepNumber + " of Sheet "+ sheetInfo[1]  + "USE format -  var <variable name>");
 		
-		createResultSet(fileName, currentSheet, "FAIL","Incorrect Variable Declaration for the Action " + data.get(2)
-						+ " in Step number " + stepNumber + " of Sheet "+ currentSheet + " USE format - var <variable name>", "N/A");
+		createResultSet(sheetInfo, "FAIL","Incorrect Variable Declaration for the Action " + data.get(2)
+						+ " in Step number " + stepNumber + " of Sheet "+ sheetInfo[1] + " USE format - var <variable name>", "N/A");
 		
-		quit(fileName, currentSheet, 0);  //Quit the browser due to Execution Failure
+		quit(sheetInfo, 0);  //Quit the browser due to Execution Failure
 		
 	}
 	
 	/**
 	 * Logs error message Set in case of any exceptional condition. 
-	 * @param fileName - Name of currently Executing File
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param data - Cell data from the currently executing Sheet
 	 * @param stepNumber - Currently executing row number 
-	 * @param currentSheet - Currently Executing Sheet
 	 * @param e - Exception class object
 	 * @return - returns to the Exception message
 	 */
 
-	public String exceptionalCondition(String fileName, ArrayList<String> data,String stepNumber, String currentSheet, Exception e) {
+	public String exceptionalCondition(String [] sheetInfo, ArrayList<String> data,String stepNumber, Exception e) {
 		appLogs.debug("Inside the exceptionalCondition method");
-		appLogs.error("Exception Raised :  For Action " + data.get(2)+ " in Step number " + stepNumber + " of Sheet" + currentSheet);
+		appLogs.error("Exception Raised :  For Action " + data.get(2)+ " in Step number " + stepNumber + " of Sheet" + sheetInfo[1]);
 		
 		appLogs.error(e.getMessage());
 		return e.getMessage().toString();
@@ -2199,15 +2318,22 @@ public class Utils extends DriverScript {
 	/**
 	 * Takes screenshot in case of any failure
 	 * 
-	 * @param fileName - Name of currently Executing File
+	 * @param sheetInfo -  String array containing info of the sheet config- file name, current sheet name
+	 * browser,OS if any, Node URL if any.
 	 * @param stepNumber - Currently executing row number 
-	 * @param sheetName - Currently Executing Sheet
 	 * @param exceptionMessage - Exception message that was raised in the current stepNumber
 	 * @return - N/A
 	 */
-	public void getScreenshot(String fileName, String sheetName,String stepNumber, String exceptionMessage) {
-
-		String screenshotName = fileName + "-" + sheetName + "-" + "Step"+ stepNumber;
+	public void getScreenshot(String [] sheetInfo,String stepNumber, String exceptionMessage) {
+          
+		String screenshotName = "";
+		if(!enable_grid){
+		  screenshotName = sheetInfo[0] + "-" + sheetInfo[1] + "-" + "Step"+ stepNumber;
+		}
+		else{
+			screenshotName = sheetInfo[0] + "-" + sheetInfo[1] + "-" + sheetInfo[2] + "-"+ sheetInfo[4] + "-"+ "Step"+ stepNumber;
+		}
+		
 		File scrFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
 		try {
 			FileUtils.copyFile(scrFile, new File(System.getProperty("user.dir")+ "/Results/Screenshots/" + screenshotName + ".png"));
@@ -2216,8 +2342,8 @@ public class Utils extends DriverScript {
 			e.printStackTrace();
 		}
 
-		createResultSet(fileName, sheetName, "FAIL", exceptionMessage,screenshotName);
-		quit(fileName, sheetName, 0);
+		createResultSet(sheetInfo, "FAIL", exceptionMessage,screenshotName);
+		quit(sheetInfo, 0);
 	}
 	
 	public void testMethod(){
